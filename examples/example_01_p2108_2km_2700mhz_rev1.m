@@ -77,6 +77,9 @@ results = struct("freq_mhz", freq_mhz, "dist_km", dist_km, "L_l_db", L_l, ...
     "table", tbl, "u", u, "draws_db", loss_draws_db, "figure", fig);
 
 if options.save_out
+    for out_folder = fullfile(options.out_root, "docs", ["results", "figures"])
+        if ~isfolder(out_folder), mkdir(out_folder); end
+    end
     writetable(tbl, fullfile(options.out_root, "docs", "results", "p2108_2km_2700mhz.csv"));
     exportgraphics(fig, fullfile(options.out_root, "docs", "figures", "fig01_p2108_2km_2700mhz.png"), Resolution=200);
 end

@@ -103,6 +103,9 @@ results = struct("freq_mhz", freq_mhz, "dist_km", dist_km, "info", info, ...
     "figure", fig);
 
 if options.save_out
+    for out_folder = fullfile(options.out_root, "docs", ["results", "figures"])
+        if ~isfolder(out_folder), mkdir(out_folder); end
+    end
     writetable(tbl, fullfile(options.out_root, "docs", "results", "itm_flat_100km_2700mhz.csv"));
     writetable(tbl_rc, fullfile(options.out_root, "docs", "results", "itm_flat_100km_2700mhz_rel_conf.csv"));
     exportgraphics(fig, fullfile(options.out_root, "docs", "figures", "fig03_itm_flat_100km_2700mhz.png"), Resolution=200);

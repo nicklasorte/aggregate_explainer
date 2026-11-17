@@ -71,6 +71,9 @@ results = struct("table", tbl, "median_db", median_db, "u", u, ...
     "max_spline_linear_db", max(abs(curve_spline - curve_linear)), "figure", fig);
 
 if options.save_out
+    for out_folder = fullfile(options.out_root, "docs", ["results", "figures"])
+        if ~isfolder(out_folder), mkdir(out_folder); end
+    end
     writetable(tbl, fullfile(options.out_root, "docs", "results", "bs_eirp_distribution.csv"));
     exportgraphics(fig, fullfile(options.out_root, "docs", "figures", "fig02_bs_eirp_distribution.png"), Resolution=200);
 end

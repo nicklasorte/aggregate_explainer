@@ -33,7 +33,7 @@ values = c(:, 2);
 
 is_azi = strtrim(labels) == "Azimuth";
 is_ele = strtrim(labels) == "Elevation";
-is_pct = contains(labels, "th");
+is_pct = startsWith(strtrim(labels), digitsPattern + "th");   % "50th%", "20th"; not "Azimuth"
 if ~any(is_pct)
     error("aggregate_explainer:EirpTable", ...
         "No percentile rows (for example ""50th%%"") found in %s.", xlsx_file);

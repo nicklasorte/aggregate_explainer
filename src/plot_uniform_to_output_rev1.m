@@ -28,6 +28,9 @@ arguments
 end
 
 fig = figure(Color="w", Position=[100 100 1200 380]);
+if ~isMATLABReleaseOlderThan("R2025a")
+    theme(fig, "light");   % same figure on screens set to dark mode
+end
 t = tiledlayout(fig, 1, 3, TileSpacing="compact", Padding="compact");
 title(t, opts.title_str, FontWeight="bold");
 subtitle(t, "DRAFT//PRE-DECISIONAL");

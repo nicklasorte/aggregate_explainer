@@ -65,8 +65,8 @@ end
 
 function test_p2108_rejects_bad_inputs(tc)
 tc.verifyError(@() p2108_terrestrial_clutter_loss_vector_rev2([], 400, 1, 50), "MATLAB:validators:mustBeInRange");
-tc.verifyError(@() p2108_terrestrial_clutter_loss_vector_rev2([], 2700, 1, 0), "MATLAB:validators:mustBeGreater");
-tc.verifyError(@() p2108_terrestrial_clutter_loss_vector_rev2([], 2700, 1, 100), "MATLAB:validators:mustBeLess");
+tc.verifyError(@() p2108_terrestrial_clutter_loss_vector_rev2([], 2700, 1, 0), "MATLAB:validators:mustBeGreaterThan");
+tc.verifyError(@() p2108_terrestrial_clutter_loss_vector_rev2([], 2700, 1, 100), "MATLAB:validators:mustBeLessThan");
 end
 
 % ---------------- EIRP table and sampling ----------------
