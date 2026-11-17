@@ -49,13 +49,17 @@ Points to verify with Nick before writing, because the code leaves them open:
 - **Second threshold.** When a second threshold and percentile are set, the
   code takes the larger of the two counts. Include or leave out of the
   explainer?
-- **Which ranking to teach.** The simple descending sort (`tf_opt=0`) is easy
-  to explain. Production uses `tf_opt=1`. Proposal: teach the simple sort,
-  then one paragraph on why the near-optimal order exists.
 - **Seeds.** Step 5 seeds the three draws with `rng(seed+k)`, `rng(seed+k+1)`,
   `rng(seed+k+2)`. `check_mc_seed_independence_rev1.m` in the same repository
   tests whether this reuses draws across iterations. The explainer code uses
   independent substreams. Decide whether the paper mentions this.
+
+Decided (2026-11-17):
+
+- **Ranking to teach.** Teach the simple descending sort by median received
+  power (`tf_opt=0`). Then one paragraph on the near-optimal order
+  (`tf_opt=1`), which production uses, and why it exists.
+- **EIRP units.** dBm.
 
 ## Section outline
 
@@ -75,6 +79,12 @@ Monte Carlo**
 1. **Step 4: pick the percentile.** Sort the sizes; mark the 80th percentile;
    show the `ceil` and the plus-one margin. Plain-language reading: "In 80 %
    of the simulated conditions, turning off this many stations is enough."
+1. **The near-optimal order, in one paragraph.** Production ranks stations
+   with `near_opt_sort_idx_man_azi_rev6` instead of the plain sort, because
+   the radar sees stations through its antenna pattern across azimuths, and a
+   station that is strong at one azimuth may matter less than several weaker
+   ones at the azimuth that sets the aggregate. The mechanics in this section
+   don't change: one fixed order, a cut point per iteration, a percentile.
 1. **Why order by the median and not per iteration?** A list has to be one
    list. If each iteration picked its own stations, the result would be 1,000
    different lists that can't be combined into an operating rule. Fixing the

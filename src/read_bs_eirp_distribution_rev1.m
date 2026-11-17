@@ -14,9 +14,9 @@ function eirp_table = read_bs_eirp_distribution_rev1(xlsx_file)
 %   per percentile, sorted by percentile. The azimuth and elevation of the
 %   cut are stored in eirp_table.Properties.UserData.
 %
-%   Units: the workbook does not state them. FSS_Neighborhood normalizes
-%   the table to its 50th percentile and adds the result to a fixed median
-%   EIRP, so only the shape (dB relative to the median) is used there.
+%   Units: EIRP in dBm. FSS_Neighborhood normalizes the table to its 50th
+%   percentile and adds the result to a fixed median EIRP, so only the
+%   shape (dB relative to the median) is used there.
 %
 %   See also sample_from_percentile_table_rev1, readcell.
 
@@ -47,7 +47,7 @@ if any(isnan(percentile)) || any(~isfinite(eirp_db))
 end
 
 eirp_table = sortrows(table(percentile, eirp_db), "percentile");
-eirp_table.Properties.VariableUnits = ["%", "dB"];
+eirp_table.Properties.VariableUnits = ["%", "dBm"];
 if ~issorted(eirp_table.eirp_db)
     error("aggregate_explainer:EirpTable", ...
         "EIRP must not decrease with percentile in %s.", xlsx_file);

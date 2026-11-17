@@ -142,11 +142,11 @@ where the Recommendation gives no value.
 Base station EIRP toward the horizon varies with traffic load and beam
 steering. The simulation describes it with a table of percentiles for the
 0° azimuth, 0° elevation direction (`data/7Ghz 0azi 0ele EIRP.xlsx`, from
-FSS_Neighborhood). The workbook doesn't state units.
+FSS_Neighborhood). Values are in dBm.
 
 | Percentile | 0 | 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| EIRP (dB) | 19.5 | 25.25 | 28 | 29.25 | 30.25 | 31.75 | 32.75 | 33.75 | 35.5 | 38.5 | 42.5 |
+| EIRP (dBm) | 19.5 | 25.25 | 28 | 29.25 | 30.25 | 31.75 | 32.75 | 33.75 | 35.5 | 38.5 | 42.5 |
 | Offset from median (dB) | −12.25 | −6.5 | −3.75 | −2.5 | −1.5 | 0 | 1 | 2 | 3.75 | 6.75 | 10.75 |
 
 The simulation uses the last row. It sets a fixed median EIRP for each base

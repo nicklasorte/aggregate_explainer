@@ -82,5 +82,8 @@ run_all_examples_rev1
 - `p2108_terrestrial_clutter_loss_vector_rev2` fixes two issues in the rev1
   copy in `general_terrestrial_pathloss`: Equation (6) applied as a distance
   clamp, and the output shape for row or matrix distances. See its help text.
-- The EIRP workbook doesn't state units. The production simulation uses only
-  its shape relative to the median.
+- The EIRP workbook is in dBm. The production simulation uses only its shape
+  relative to the median.
+- The turn-off list section teaches the simple descending sort by median
+  received power first, then gives the near-optimal order (`tf_opt=1`) one
+  paragraph.

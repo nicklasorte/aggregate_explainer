@@ -2,7 +2,7 @@
 
 | File | Source | Notes |
 | --- | --- | --- |
-| `7Ghz 0azi 0ele EIRP.xlsx` | [nicklasorte/FSS_Neighborhood](https://github.com/nicklasorte/FSS_Neighborhood/blob/main/7Ghz%200azi%200ele%20EIRP.xlsx), commit `af0f1ed` | Base station EIRP percentiles (0th to 100th, every 10th) for the 0° azimuth, 0° elevation cut. Units not stated in the workbook. Used by `init_sim_folder_FSS_neigh_rev25_fdr_github.m`, which normalizes it to its median. |
+| `7Ghz 0azi 0ele EIRP.xlsx` | [nicklasorte/FSS_Neighborhood](https://github.com/nicklasorte/FSS_Neighborhood/blob/main/7Ghz%200azi%200ele%20EIRP.xlsx), commit `af0f1ed` | Base station EIRP percentiles (0th to 100th, every 10th) for the 0° azimuth, 0° elevation cut, in dBm. Used by `init_sim_folder_FSS_neigh_rev25_fdr_github.m`, which normalizes it to its median. |
 
 Code copied or adapted from other repositories:
 
