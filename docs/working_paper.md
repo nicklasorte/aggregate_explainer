@@ -288,14 +288,16 @@ how the wireless industry built it, as an "EIRP heatmap":
 1. **Record percentiles by direction.** In each direction (2° steps in
    azimuth, 1° steps in elevation), the 300 values give the 0th to 100th
    percentiles in 10-point steps. The CTIA paper also describes two more
-   datasets of the same kind from West Los Angeles.
+   datasets of the same kind from West Los Angeles. The workbook used here is
+   the Dallas dataset.
 
 Three consequences follow for the Monte Carlo simulation:
 
 - **Units.** The heatmap is a power spectral density in dBm/MHz for one
   polarization. For short, this paper's text and figures write dBm; read
-  every EIRP and received power in the paper as per megahertz. (TODO: confirm that this workbook follows the CTIA
-  heatmap convention, and which of the three datasets it comes from.)
+  every EIRP and received power in the paper as per megahertz. (TODO:
+  confirm that the workbook keeps the CTIA heatmap's single-polarization,
+  per-megahertz convention.)
 - **What one draw means.** A draw from the table is the 15-minute average
   power of a randomly chosen cell in a randomly chosen afternoon or evening
   period. It isn't an instantaneous power. Averaging over time and beam
@@ -451,6 +453,22 @@ elevation everywhere), 100 km long, sampled every 100 m.
 | Polarization | Vertical |
 | Ground | ε = 25, σ = 0.02 S/m |
 | Mode of variability | 13 (broadcast, no location variability) |
+
+ITM has no single path loss equation. It computes a *reference attenuation*
+below free space from the path geometry, using one of three methods:
+two-ray (line of sight), knife-edge and smooth-earth diffraction, or
+troposcatter. It then adds the time, location, and situation variability
+for the requested percentages:
+
+$$
+L_b(q_T, q_C) = L_\mathrm{fs} + A_\mathrm{ref} + Y(q_T, q_C),
+$$
+
+where $L_\mathrm{fs}$ is free-space loss, $A_\mathrm{ref}$ is the reference
+attenuation, $q_T$ is the reliability (time), $q_C$ is the confidence, and
+$Y$ is the variability term in dB, which grows with the reliability and the
+confidence. The full method is in the NTIA/ITS
+reference code (see References).
 
 On this path the two radio horizons are 22.6 km and 13.0 km from the
 terminals, well short of meeting, so ITM reports the troposcatter mode.
@@ -861,6 +879,13 @@ polygon can free up area in directions where few base stations contribute,
 at the cost of a search in many more dimensions and a zone that is harder to
 describe and administer. This paper doesn't take a position on the choice.
 
+The method never draws a boundary around the turn-off list. The zone is the
+circle; the list is a set of existing base stations inside it. A base station
+that is built later isn't on any list, because the list comes from the
+deployment data used in the run. How future base stations inside the zone
+are handled, by rerunning the method or by coordination, is a decision for
+the working paper, not a result of the simulation.
+
 ## 11. Five meanings of "percentage"
 
 The method uses the word *percentage* in five different ways. Most of the
@@ -880,6 +905,33 @@ time. The Monte Carlo percentile is over trials, and each trial mixes a time,
 a location, and an operating state (Section 7). Treating "the 80th
 percentile of trials" as "80% of the time" is an assumption, and the paper
 that uses the method needs to state it.
+
+### Where the criteria come from, and what a trial can't say
+
+The interference limit is the receiver noise plus the I/N criterion
+(Section 13). The I/N value and any percentage of time attached to it come
+from a source document, which the working paper needs to cite for each
+federal system. Recommendation ITU-R M.1464-2 (02/2015), for example, gives
+protection criteria for radars in 2700-2900 MHz. When the source states a
+single I/N with no percentage of time, any percentage the analysis adds is a
+separate assumption to justify.
+
+Two limits of the method matter here:
+
+- **A trial has no duration.** Each trial is an independent snapshot. The
+  simulation can say what fraction of trials exceed a level, but not how long
+  an exceedance lasts or how often bursts repeat. A criterion stated in
+  seconds of main-beam exposure, or in microsecond bursts, needs a time
+  series or a radar model, not these trials.
+- **"Long term" and "short term" are labels for the two percentages.** In
+  this method they mean only a larger and a smaller allowed exceedance
+  percentage. If a federal system's criterion is a single value, there is
+  one comparison, not two.
+
+The percentage of trials that exceed the limit is computed directly: count
+the trials whose aggregate is above the limit and divide by the number of
+trials. Comparing the aggregate at the 80th percentile with the limit is the
+same test as asking whether no more than 20% of trials exceed it.
 
 ### Comparing against two criteria
 
@@ -907,7 +959,32 @@ rule in Section 1 gives the uncertainty for any percentile and any number of
 trials. A short-term criterion needs either many more trials or a method that
 targets the tail directly.
 
+To choose the number of trials, pick the percentile you compare against and
+the uncertainty you can accept at it, then solve the standard-error formula
+in Section 1 for $n$. As a check, rerun with a different seed: if the zone
+radius changes, the number of trials is too small for that percentile. The
+production settings use 1,000 trials for the 80th percentile.
+
 ## 12. What is random and what is fixed
+
+### Why these distributions
+
+A Monte Carlo simulation is only as good as the distributions it draws from.
+None of the three here is invented for the simulation:
+
+| Input | Where its distribution comes from | How this paper checks it |
+| --- | --- | --- |
+| EIRP | Measured scheduler data from 60 cells, combined with antenna patterns (Section 3) | The fit is within 0.7 dB of every table point (Section 3) |
+| Path loss | ITM's time variability, derived from long-term propagation measurements | Reproduces free-space loss on short paths and switches modes at the expected distances (Section 4) |
+| Clutter loss | ITU-R P.2108-1 Section 3.2, fitted to measurements in urban and suburban areas | Matches the NTIA reference implementation and its test data (Section 2) |
+
+Each was built for a purpose close to this one: predicting the spread of
+power arriving at a distant receiver. The open questions are about fit to
+this case, not about the form: the EIRP table comes from a 3.7 GHz network
+extrapolated to 7 GHz and used at 2.7 GHz (TODO in Section 3), and clutter
+loss doesn't cover every receiver (Section 13).
+
+### Inputs and outputs
 
 | Quantity | Random or fixed | How it varies | Source in this paper |
 | --- | --- | --- | --- |
@@ -941,13 +1018,23 @@ $$
 N\ (\mathrm{dBm}) = 10\log_{10}(kT) + 10\log_{10}(B) + \mathrm{NF},
 $$
 
-where $k$ is Boltzmann's constant, $T$ is the noise temperature in kelvin,
-$B$ is the receiver bandwidth, and NF is the receiver noise figure in dB. At
-the standard temperature of 290 K, $10\log_{10}(kT)$ is −174 dBm per hertz,
-which is the same as −114 dBm per megahertz. The two forms give the same
-answer as long as $B$ is in the matching unit: hertz with −174, megahertz with
-−114. A different temperature changes the first term by
-$10\log_{10}(T/290)$ dB.
+with these terms and units:
+
+- $N$: total receiver noise power, in dBm, referred to the receiver input.
+- $10\log_{10}(kT)$: the *thermal noise term*, in dBm/Hz. $k$ is Boltzmann's
+  constant and $T$ is the noise temperature in kelvin. In general form it is
+  $-198.6 + 10\log_{10}(T)$ dBm/Hz.
+- $10\log_{10}(B)$: the receiver bandwidth term, in dB relative to 1 Hz. $B$
+  is the receiver's noise bandwidth in hertz.
+- NF: the receiver noise figure, in dB.
+
+At the standard temperature of 290 K, the thermal noise term is −174 dBm/Hz,
+which is the same as −114 dBm/MHz. The two forms give the same answer as long
+as $B$ is in the matching unit: hertz with −174, megahertz with −114. A
+different temperature changes the thermal noise term by $10\log_{10}(T/290)$
+dB. Using 290 K with the receiver noise figure is the usual convention; an
+antenna temperature that differs from 290 K, such as a radar looking at a
+cold sky, is a separate assumption that needs its own source.
 
 The interference limit follows from the noise: the maximum interference power
 is $N$ plus the interference-to-noise ratio (I/N) criterion. For example,
@@ -1013,9 +1100,14 @@ be stated.
 ITM takes the ground's relative permittivity and conductivity as two inputs
 and combines them internally into the complex permittivity,
 $\varepsilon_r - j\,18\sigma/f_\mathrm{GHz}$. The values used here, 25 and
-0.02 S/m, are ITM's "good ground" values. The ground constants affect the
-two-ray region near the base station and smooth-earth diffraction; they have
-little effect on a troposcatter path like the 100 km example.
+0.02 S/m, are ITM's "good ground" values. They aren't measured for any site.
+Recommendation ITU-R P.527 gives the permittivity of soil, water, and ice by
+moisture and frequency; P.2040 covers building materials, which don't apply
+to a ground input. The ground constants affect the two-ray region near the
+base station and smooth-earth diffraction; they have little effect on a
+troposcatter path like the 100 km example. The working paper needs to state
+its values and source, and a short sensitivity run settles whether the
+choice matters for the zone radius.
 
 ### When clutter loss applies
 
@@ -1045,6 +1137,18 @@ correction.
 | Path loss | NTIA/ITS Irregular Terrain Model v1.4, through the `matlab_itm` port | November 2026 |
 | AAS antenna model behind the EIRP table | Recommendation ITU-R M.2101-0 (02/2017), extended AAS | As cited by the CTIA paper |
 | Frequency-dependent rejection | Recommendation ITU-R SM.337-6 | Not used in this paper's examples |
+| Interference prediction | Recommendation ITU-R P.452-18 (10/2023) | Not used here; cited for readers comparing models |
+| Trans-horizon propagation | Recommendation ITU-R P.617-6 (09/2025) | Not used here; cited for readers comparing models |
+| Radar protection criteria, 2700-2900 MHz | Recommendation ITU-R M.1464-2 (02/2015) | Section 11 |
+
+Cite the version in force on the date of the analysis, and give its date.
+
+### Units
+
+Every power in this paper (EIRP, received power, interference, noise) is in
+dBm, per megahertz unless the text says otherwise. Every gain and loss is in
+dB. A transmit power without an antenna gain is a conducted power and is
+also in dBm per megahertz.
 
 ## 14. Differences from the production simulation
 

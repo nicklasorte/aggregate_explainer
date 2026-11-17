@@ -6,6 +6,12 @@ Notable changes to the working paper and code. Newest first.
 
 ### Added
 
+- Paper: why the three distributions fit the job (Section 12); where
+  protection criteria come from, what a trial can't say about duration, and
+  how to choose the number of trials (Section 11); ITM's loss structure and
+  ground-constant sources (Sections 4 and 13); noise terms and units, current
+  model versions, a units rule, and how future base stations relate to the
+  zone. Section 3 names the Dallas dataset.
 - Example 07 and paper Sections 8-13: how the turn-off list is built (fixed
   median order, one cut point per trial, 80th percentile plus one), the two
   Monte Carlo simulations, the radius search, five meanings of
