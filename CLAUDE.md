@@ -137,8 +137,10 @@ Markdown.
 - Section 3 describes how CTIA built the EIRP heatmap, citing the CTIA
   working paper (August 10, 2026). EIRP and received power in the paper are
   per megahertz; the text writes dBm for short.
-- `docs/PLAN_visualize_turn_off_list.md` plans six step-by-step figures for
-  Section 8 (example 07 `_rev2` and a new example 08). Not built yet.
+- `docs/PLAN_visualize_turn_off_list.md` lists 27 figure options for Section 8
+  and recommends eight. `docs/plan_previews/turn_off_list/` holds Python
+  previews (design only, from the exact example 07 draws); the paper's
+  figures get rebuilt in MATLAB. Not built yet.
 - The turn-off list section (Section 8, example 07) teaches the simple descending sort by median
   received power first, then gives the near-optimal order (`tf_opt=1`) one
   paragraph.
