@@ -160,8 +160,9 @@ separate draw.
 Sections 6 and 7 do this for one base station. Sections 8 to 10 explain how
 the simulation turns many base stations into a turn-off list and a zone.
 Sections 11 to 13 define the terms that readers most often ask about.
-Section 14 lists how this paper differs from the production simulation, and
-Section 15 lists planned work.
+Section 14 lists how this paper differs from the production simulation,
+Section 15 lists planned work, and Appendix A shows figure options for the
+turn-off list.
 
 ## 2. Example 1: clutter loss (ITU-R P.2108-1), 2 km, 2.7 GHz
 
@@ -793,6 +794,8 @@ In trial 1, the second base station drew a high power, and turning off the
 first two is enough. In trial 3, the fixed order turns off the first two even
 though they drew low powers, and the cut point lands at 5.
 
+For 27 other ways to draw this example, step by step, see Appendix A.
+
 ![Turn-off list worked example](figures/fig08_turn_off_list_toy.png)
 
 *Figure 8. Left: the share of 1,000 trials that needed each number of base
@@ -1198,3 +1201,140 @@ the percentiles by less than 0.1 dB.
    and systems for use in sharing and compatibility studies*, 02/2017.
 1. Recommendation ITU-R SM.337-6, *Frequency and distance separations*,
    10/2008.
+
+## Appendix A. Figure options for the turn-off list
+
+This appendix shows every figure option drawn for Section 8 and the start of
+Section 9. Each one tells part of the same worked example in a different form,
+so you can pick the one that works for your audience. The
+[visualization plan](PLAN_visualize_turn_off_list.md) gives the strengths and
+risks of each option.
+
+All numbers come from the exact draws of the example 07 run in Section 8
+(1,000 trials, seed 1). The figures are drawn in Python by
+`docs/plan_previews/turn_off_list/make_previews.py`, which checks the
+published values before it draws. The option ID (A1 to H1) matches the plan.
+
+### Step 1: the ranking
+
+![Option A1: Sorted bars of median received power. Ranks 1 to 6 sit inside the radius; A to D sit outside and can't go on the list.](plan_previews/turn_off_list/png/A1_ranking_bars.png)
+
+*Figure A-1. Option A1. Sorted bars of median received power. Ranks 1 to 6 sit inside the radius; A to D sit outside and can't go on the list.*
+
+![Option A2: Plan-view sketch, not to scale. Dot size shows median power.](plan_previews/turn_off_list/png/A2_plan_view.png)
+
+*Figure A-2. Option A2. Plan-view sketch, not to scale. Dot size shows median power.*
+
+![Option A3: Share of the median aggregate from each base station, as 100 squares. Rank 1 alone delivers 39%.](plan_previews/turn_off_list/png/A3_share_waffle.png)
+
+*Figure A-3. Option A3. Share of the median aggregate from each base station, as 100 squares. Rank 1 alone delivers 39%.*
+
+![Option A4: Share bars with a cumulative line. The first three ranks carry 80% of the median power.](plan_previews/turn_off_list/png/A4_cumulative_share.png)
+
+*Figure A-4. Option A4. Share bars with a cumulative line. The first three ranks carry 80% of the median power.*
+
+### Step 2: one trial, at the medians
+
+![Option B1: The aggregate from the base stations still on, as each one turns off in order. At the medians, the staircase crosses the limit at three off.](plan_previews/turn_off_list/png/B1_staircase.png)
+
+*Figure A-5. Option B1. The aggregate from the base stations still on, as each one turns off in order. At the medians, the staircase crosses the limit at three off.*
+
+![Option B2: The same steps in linear power (femtowatts), where each base station is a block that adds.](plan_previews/turn_off_list/png/B2_shrinking_blocks.png)
+
+*Figure A-6. Option B2. The same steps in linear power (femtowatts), where each base station is a block that adds.*
+
+![Option B3: The same steps as a waterfall: each base station turned off removes its share of the power.](plan_previews/turn_off_list/png/B3_waterfall.png)
+
+*Figure A-7. Option B3. The same steps as a waterfall: each base station turned off removes its share of the power.*
+
+![Option B4: The same steps as a storyboard, one row of tiles per step.](plan_previews/turn_off_list/png/B4_storyboard.png)
+
+*Figure A-8. Option B4. The same steps as a storyboard, one row of tiles per step.*
+
+### Step 2 repeated: many trials
+
+![Option C1: The staircase for the medians and the first three trials. The order is the same in every panel; the cut point moves to 2, 4, and 5.](plan_previews/turn_off_list/png/C1_small_multiples.png)
+
+*Figure A-9. Option C1. The staircase for the medians and the first three trials. The order is the same in every panel; the cut point moves to 2, 4, and 5.*
+
+![Option C2: Staircases for 60 trials, with the medians highlighted. The cut point spreads from 1 to 6.](plan_previews/turn_off_list/png/C2_spaghetti.png)
+
+*Figure A-10. Option C2. Staircases for 60 trials, with the medians highlighted. The cut point spreads from 1 to 6.*
+
+![Option C3: Each rank's received power in 1,000 trials. Rank 2 draws stronger than rank 1 in 38% of trials, but rank 1 still turns off first.](plan_previews/turn_off_list/png/C3_strip_by_rank.png)
+
+*Figure A-11. Option C3. Each rank's received power in 1,000 trials. Rank 2 draws stronger than rank 1 in 38% of trials, but rank 1 still turns off first.*
+
+![Option C4: Received power for the first 12 trials, with the cut drawn as an edge. The off set always starts at rank 1.](plan_previews/turn_off_list/png/C4_heatmap_trials.png)
+
+*Figure A-12. Option C4. Received power for the first 12 trials, with the cut drawn as an edge. The off set always starts at rank 1.*
+
+### The fixed order, made visible
+
+![Option D1: Which base stations turn off in 50 trials, with the fixed median order (left) and if each trial chose its own (right).](plan_previews/turn_off_list/png/D1_tile_grids.png)
+
+*Figure A-13. Option D1. Which base stations turn off in 50 trials, with the fixed median order (left) and if each trial chose its own (right).*
+
+![Option D2: How often each rank turns off, with the fixed order and with free choice.](plan_previews/turn_off_list/png/D2_off_rate_by_rank.png)
+
+*Figure A-14. Option D2. How often each rank turns off, with the fixed order and with free choice.*
+
+![Option D3: The most common sets of base stations that free choice turns off. Free choice produces 56 different sets; the fixed order produces 7.](plan_previews/turn_off_list/png/D3_distinct_lists.png)
+
+*Figure A-15. Option D3. The most common sets of base stations that free choice turns off. Free choice produces 56 different sets; the fixed order produces 7.*
+
+### Steps 3 and 4: from 1,000 cut points to one list size
+
+![Option E1: Quantile dot plot: each dot is 10 trials, rounded by largest remainder. The 80th dot lands at 4; with the margin of one, the list is 5.](plan_previews/turn_off_list/png/E1_quantile_dots.png)
+
+*Figure A-16. Option E1. Quantile dot plot: each dot is 10 trials, rounded by largest remainder. The 80th dot lands at 4; with the margin of one, the list is 5.*
+
+![Option E2: Histogram of the cut points. 83.7% of trials need four or fewer base stations off.](plan_previews/turn_off_list/png/E2_histogram.png)
+
+*Figure A-17. Option E2. Histogram of the cut points. 83.7% of trials need four or fewer base stations off.*
+
+![Option E3: Cumulative share of trials by cut point, with the 80% line.](plan_previews/turn_off_list/png/E3_cumulative.png)
+
+*Figure A-18. Option E3. Cumulative share of trials by cut point, with the 80% line.*
+
+![Option E4: The 80th percentile of the cut points as trials accumulate. It settles at 4 after about 23 trials.](plan_previews/turn_off_list/png/E4_running_percentile.png)
+
+*Figure A-19. Option E4. The 80th percentile of the cut points as trials accumulate. It settles at 4 after about 23 trials.*
+
+### The check (Section 9)
+
+![Option F1: Share of check-run trials exceeding each level. With five off, the aggregate meets the limit in 89% of trials.](plan_previews/turn_off_list/png/F1_exceedance.png)
+
+*Figure A-20. Option F1. Share of check-run trials exceeding each level. With five off, the aggregate meets the limit in 89% of trials.*
+
+![Option F2: Histogram of the check-run aggregate. Its 80th percentile is −100.1 dBm, under the −99 dBm limit.](plan_previews/turn_off_list/png/F2_histogram.png)
+
+*Figure A-21. Option F2. Histogram of the check-run aggregate. Its 80th percentile is −100.1 dBm, under the −99 dBm limit.*
+
+![Option F3: Who stays on in the check run. Base stations outside the radius carry 59% of the median power.](plan_previews/turn_off_list/png/F3_who_stays_on.png)
+
+*Figure A-22. Option F3. Who stays on in the check run. Base stations outside the radius carry 59% of the median power.*
+
+![Option F4: Exceedance curves with all ten on and with the list applied. The list moves the 80th percentile from −89.7 to −100.1 dBm.](plan_previews/turn_off_list/png/F4_before_after.png)
+
+*Figure A-23. Option F4. Exceedance curves with all ten on and with the list applied. The list moves the 80th percentile from −89.7 to −100.1 dBm.*
+
+![Option F5: One dot per check-run trial; the 107 over the limit are purple.](plan_previews/turn_off_list/png/F5_trial_strip.png)
+
+*Figure A-24. Option F5. One dot per check-run trial; the 107 over the limit are purple.*
+
+### What the fixed order costs
+
+![Option G1: Cut points with the fixed order (up) and free choice (down): means of 3.34 and 2.64.](plan_previews/turn_off_list/png/G1_back_to_back.png)
+
+*Figure A-25. Option G1. Cut points with the fixed order (up) and free choice (down): means of 3.34 and 2.64.*
+
+![Option G2: Extra base stations the fixed order turns off compared with each trial's own best set. In 49% of trials it costs nothing extra.](plan_previews/turn_off_list/png/G2_extra_cost.png)
+
+*Figure A-26. Option G2. Extra base stations the fixed order turns off compared with each trial's own best set. In 49% of trials it costs nothing extra.*
+
+### Summary
+
+![Option H1: The four steps in one strip, for slides and read-aheads.](plan_previews/turn_off_list/png/H1_summary_strip.png)
+
+*Figure A-27. Option H1. The four steps in one strip, for slides and read-aheads.*

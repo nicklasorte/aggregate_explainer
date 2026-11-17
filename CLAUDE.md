@@ -140,7 +140,9 @@ Markdown.
 - `docs/PLAN_visualize_turn_off_list.md` lists 27 figure options for Section 8
   and recommends eight. `docs/plan_previews/turn_off_list/` holds Python
   previews (design only, from the exact example 07 draws); the paper's
-  figures get rebuilt in MATLAB. Not built yet.
+  figures get rebuilt in MATLAB. Not built yet. Appendix A of the paper
+  shows all 27 previews; rerun `make_previews.py` and rebuild the Word file
+  if example 07 changes.
 - The turn-off list section (Section 8, example 07) teaches the simple descending sort by median
   received power first, then gives the near-optimal order (`tf_opt=1`) one
   paragraph.

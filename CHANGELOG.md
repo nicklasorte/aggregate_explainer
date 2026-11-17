@@ -6,6 +6,8 @@ Notable changes to the working paper and code. Newest first.
 
 ### Added
 
+- Appendix A: all 27 figure options for the turn-off list (Section 8 and the
+  start of Section 9), drawn from the exact example 07 draws.
 - Paper: why the three distributions fit the job (Section 12); where
   protection criteria come from, what a trial can't say about duration, and
   how to choose the number of trials (Section 11); ITM's loss structure and
