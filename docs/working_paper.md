@@ -157,10 +157,11 @@ which already includes its antenna gain. $G_\mathrm{rx}$ is the gain of the
 receive antenna toward the base station. Each of the first three terms is a
 separate draw.
 
-Sections 6 and 7 do this for one base station. Section 8 lists how this paper
-differs from the production simulation, and Section 9 lists the planned
-sections on how per-station powers are added and how the turn-off list is
-built.
+Sections 6 and 7 do this for one base station. Sections 8 to 10 explain how
+the simulation turns many base stations into a turn-off list and a zone.
+Sections 11 to 13 define the terms that readers most often ask about.
+Section 14 lists how this paper differs from the production simulation, and
+Section 15 lists planned work.
 
 ## 2. Example 1: clutter loss (ITU-R P.2108-1), 2 km, 2.7 GHz
 
@@ -263,13 +264,49 @@ where the Recommendation gives no value.
 Base station EIRP toward the horizon varies with traffic load and beam
 steering. The simulation describes it with a table of percentiles for the
 0° azimuth, 0° elevation direction (`data/7Ghz 0azi 0ele EIRP.xlsx`, from
-FSS_Neighborhood). Values are in dBm.
+FSS_Neighborhood).
 
-**Where the table comes from.** CTIA provided the table, based on empirical
-measurements of base stations in the field. It is measured data, not the
-output of an antenna model.
+**Where the table comes from.** CTIA provided the table. The *7 GHz CTIA
+Cellular Network Characteristics* working paper (August 10, 2026) describes
+how the wireless industry built it, as an "EIRP heatmap":
 
-| Percentile (%) | EIRP (dBm) | Offset from median (dB) |
+1. **Measure a live network.** A base station equipment manufacturer recorded
+   the scheduler data of 60 cells in a 3.7 GHz network in a suburb of Dallas,
+   Texas: which beam each cell used and how much of the channel it filled, in
+   every 0.5 ms transmit interval. Recording ran for five 15-minute periods
+   on one day (noon to 8 PM, every two hours), about 540 million samples in
+   all.
+1. **Turn traffic into power by direction.** For each cell and each
+   15-minute period, the beams used and their traffic load were combined with
+   modeled antenna patterns (the ITU-R extended AAS model) to get the average
+   power spectral density in every direction in front of the antenna. That
+   gives 300 cell-period datasets (60 cells times 5 periods).
+1. **Extrapolate to 7 GHz.** The same traffic was assigned to the narrower
+   beams of a 7 GHz antenna (4 by 16 subarrays of 6 elements) with a peak
+   traffic-beam EIRP of 71 dBm/MHz. The 7 GHz layer is assumed to reuse the
+   same sites and serve the same traffic.
+1. **Record percentiles by direction.** In each direction (2° steps in
+   azimuth, 1° steps in elevation), the 300 values give the 0th to 100th
+   percentiles in 10-point steps. The CTIA paper also describes two more
+   datasets of the same kind from West Los Angeles.
+
+Three consequences follow for the Monte Carlo simulation:
+
+- **Units.** The heatmap is a power spectral density in dBm/MHz for one
+  polarization. For short, this paper's text and figures write dBm; read
+  every EIRP and received power in the paper as per megahertz. (TODO: confirm that this workbook follows the CTIA
+  heatmap convention, and which of the three datasets it comes from.)
+- **What one draw means.** A draw from the table is the 15-minute average
+  power of a randomly chosen cell in a randomly chosen afternoon or evening
+  period. It isn't an instantaneous power. Averaging over time and beam
+  directions is why the table's 100th percentile in this direction,
+  42.5 dBm/MHz, is far below the 71 dBm/MHz peak of a single traffic beam.
+- **Angles.** Azimuth and elevation are measured from the face of the
+  antenna panel, with no mechanical downtilt. A simulation applies the site's
+  downtilt and azimuth when it looks up the direction toward the receiver.
+  Broadcast beams carry under 5% of the energy and aren't included.
+
+| Percentile (%) | EIRP (dBm/MHz) | Offset from median (dB) |
 | --- | --- | --- |
 | 0 | 19.5 | −12.25 |
 | 10 | 25.25 | −6.5 |
@@ -313,9 +350,9 @@ conversion.
 
 The two differ in what a percentile means. In the modeled table a percentile
 is over random beam pointings; it includes no traffic load or TDD activity
-unless those are added. A table from field measurements reflects the base
-stations that were measured. What the CTIA percentiles range over (time at
-one station, or many stations) isn't documented here (TODO).
+unless those are added. The CTIA table instead ranges over 60 measured
+cells and five 15-minute periods, so it includes real traffic load and real
+beam use.
 
 **Assumption to confirm.** The table comes from the 7 GHz work. Using it here
 assumes that the shape of the EIRP distribution, its spread around the median,
@@ -657,7 +694,359 @@ The figure and table support four findings:
   with a 10.2 dB standard deviation, the mean power is about 12 dB above the
   median. The planned aggregate sections build on this point.
 
-## 8. Differences from the production simulation
+## 8. From many base stations to one turn-off list
+
+**Code:** `examples/example_07_turn_off_list_toy_rev1.m`
+
+Sections 1 to 7 follow the power from one base station. A federal site sees
+many. This section explains how the simulation decides which base stations
+near the site must stop transmitting, and how many. Its output is the
+*turn-off list*.
+
+### The method in four steps
+
+For one candidate radius around one protection point, the simulation does the
+following:
+
+1. **Rank the base stations once, by median power.** For every base station
+   inside the radius, compute the power it delivers to the federal receiver
+   with each random input at its median (the 50th percentile): median EIRP,
+   median path loss, and median clutter loss, plus the antenna gains toward
+   the receiver. Sort the base stations from strongest to weakest. This order
+   is fixed before any Monte Carlo trial runs. No trial changes it.
+1. **In each trial, find the cut point.** Redraw every base station's power
+   (Section 1). Walk down the fixed order, turning base stations off one at
+   a time, until the aggregate from the rest meets the limit. The number
+   turned off is that trial's list size. The order stays the same in every
+   trial; only the cut point moves.
+1. **Take a percentile of the list sizes.** After all the trials (1,000 in
+   the production settings), sort the list sizes and take the chosen
+   percentile, for example the 80th. Round up. The production code then adds
+   one more base station as a margin.
+1. **Read off the list.** The turn-off list is the top of the fixed order,
+   down to that count.
+
+When two criteria apply (for example, a long-term and a short-term
+criterion, Section 11), the production code sizes the list for each and uses
+the larger.
+
+### Why the median, and why a fixed order
+
+The ranking uses the median because it is the single most typical value of
+each random input. It is the 50th percentile, not the mean: in watts, the
+mean of a quantity that varies by many decibels is higher than its median
+(Section 7). The median gives one ranking that doesn't depend on the luck of
+any one trial.
+
+The order is fixed because a turn-off list has to be one list. If each trial
+picked its own base stations, 1,000 trials would produce 1,000 different
+lists, and there would be no way to combine them into one operating rule.
+With a fixed order, the only thing that varies from trial to trial is one
+number, the cut point, and one number has a percentile.
+
+This way of building the list is *greedy*: it turns off the largest
+contributor first, then the next largest, and stops as soon as the limit is
+met. It doesn't look ahead or try other combinations.
+
+### A worked example
+
+The example uses illustrative numbers small enough to follow by hand. Six
+base stations sit inside the radius, with median received powers of −98,
+−100, −102, −104, −106, and −108 dBm, already in median order. Four more
+sit outside it, at −110 to −116 dBm. Each base station's power varies
+around its median by a bell curve with a 5 dB standard deviation, a stand-in
+for the combined EIRP, path loss, and clutter loss draws of Sections 2 to 6.
+The limit on the aggregate is −99 dBm.
+
+With every base station at its median, the six inside give −94.0 dBm.
+Turning off the first two leaves −98.4 dBm, still over the limit;
+turning off the first three leaves −100.9 dBm, under it. At the medians,
+the list size is 3.
+
+The first three trials redraw every power:
+
+| Trial | Powers in median order (dBm) | Turned off |
+| --- | --- | --- |
+| 1 | −98.1, −93.3, −107.4, −109.2, −110.8, −109.9 | 2 |
+| 2 | −101.8, −101.4, −97.4, −98.2, −110.4, −105.5 | 4 |
+| 3 | −102.1, −104.7, −99.5, −114.5, −103.2, −99.8 | 5 |
+
+In trial 1, the second base station drew a high power, and turning off the
+first two is enough. In trial 3, the fixed order turns off the first two even
+though they drew low powers, and the cut point lands at 5.
+
+![Turn-off list worked example](figures/fig08_turn_off_list_toy.png)
+
+*Figure 8. Left: the share of 1,000 trials that needed each number of base
+stations off with the fixed median order (bars), and if each trial could
+choose its own base stations (line). Right: the aggregate in the validation
+run, with the list applied, against the limit.*
+
+Over 1,000 trials, the list size ranges from 0 to 6. Its 80th percentile is
+4, so the turn-off list is 5 base stations (4 plus the margin of one).
+
+The line in Figure 8 answers a question that reviewers ask: what does the
+fixed order cost? A trial that could choose its own base stations would need
+2.64 off on average, against 3.34 with the fixed order, and 3 at the 80th
+percentile, against 4. In this example, a single list that works for every
+trial costs about one more base station than an ideal list for each trial.
+
+The production code can also rank the base stations with a near-optimal
+order (`tf_opt=1`) instead of the simple sort. It accounts for the radar
+antenna pattern: a base station that is strong at one radar azimuth may
+matter less than several weaker ones at the azimuth that sets the aggregate.
+The mechanics are the same: one fixed order, one cut point per trial, and a
+percentile of the cut points.
+
+## 9. Two simulations: build the list, then check it
+
+For each candidate radius, the production code runs two Monte Carlo
+simulations with different questions:
+
+| | Simulation 1: build the list | Simulation 2: check the list |
+| --- | --- | --- |
+| Question | How many base stations inside this radius must be off? | With that list off, does the aggregate meet the limit often enough? |
+| Base stations included | Only those inside the candidate radius | Every base station in the study area that isn't on the list, inside the radius and outside it |
+| Output | The turn-off list (Section 8) | The aggregate at the chosen percentile, compared with the limit: pass or fail |
+
+The two simulations are needed because the list is built without the base
+stations outside the radius. Those base stations can't be turned off at this
+radius, but they still add interference. Simulation 2 adds them back and asks
+whether the radius works with the list it was given. A radius can fail even
+if every base station inside it is turned off, when the base stations outside
+it are enough to exceed the limit on their own.
+
+In the worked example, simulation 2 turns off the five listed base stations,
+keeps the sixth inside and the four outside on, and redraws all ten powers
+1,000 times. The 80th percentile of the aggregate is −100.1 dBm, under
+the −99 dBm limit, so this radius passes. The limit is met in 89% of
+trials.
+
+When the federal site has several protection points, simulation 1 runs for
+each point, and the lists are combined. Simulation 2 then checks the combined
+list at every point.
+
+One reviewer proposed a single simulation that draws all base stations once
+per trial, builds the list from the ones inside the radius, and computes the
+aggregate from all the rest, in the same trial. That design uses each trial
+twice; the production design checks the list with fresh trials. Which one
+gives a different radius, and by how much, is an experiment this paper plans
+to run, not a question it can settle by argument
+([explainer plan](PLAN_explain_aggregate_zones.md)).
+
+## 10. From a list to a zone
+
+The zone is the smallest radius around the federal site that passes. The
+production code finds it with a search:
+
+1. **Try the largest radius.** Run both simulations at the edge of the study
+   area. Then try the smallest radius (0 km).
+1. **Bisect.** Try the radius halfway between a radius that passes and one
+   that fails, and repeat, until the two are no more than the minimum step
+   apart (1 km in the production settings).
+1. **Record the crossing.** The zone radius is where the aggregate from
+   simulation 2 crosses the limit. Every base station inside the zone must
+   coordinate; the ones on the turn-off list at that radius are the ones that
+   must not transmit as modeled.
+
+The aggregate doesn't always fall smoothly as the radius grows, because each
+radius gets its own list. The production code can add a margin in decibels to
+the limit (0 dB in the production settings) and has an optional rule for
+plateaus when the list is short (turned off in the production settings).
+
+The zone is a circle because the search runs over one number, the distance
+from the protection point. A polygon would need a separate radius for each
+direction, or a boundary drawn around the base stations on the list. A
+polygon can free up area in directions where few base stations contribute,
+at the cost of a search in many more dimensions and a zone that is harder to
+describe and administer. This paper doesn't take a position on the choice.
+
+## 11. Five meanings of "percentage"
+
+The method uses the word *percentage* in five different ways. Most of the
+confusion about the method comes from mixing them up:
+
+| Percentage | What it ranges over | Where it is used |
+| --- | --- | --- |
+| Uniform draw | Nothing physical; a random number between 0 and 1, times 100 | The input to every model (Section 1) |
+| Model percentage | Time (ITM), locations (P.2108), or measured cells and periods (EIRP) | Reading each model's curve (Sections 2 to 4) |
+| 50th percentile | The same as above, held at the median | Ranking the base stations (Section 8) |
+| Monte Carlo percentile | Trials | Sizing the list, and checking the aggregate (Sections 8 and 9) |
+| Protection criterion percentage | Time that interference may exceed a level | The requirement the zone must meet |
+
+The last two are easy to confuse. A protection criterion says, for example,
+that interference may exceed a level for no more than some percentage of the
+time. The Monte Carlo percentile is over trials, and each trial mixes a time,
+a location, and an operating state (Section 7). Treating "the 80th
+percentile of trials" as "80% of the time" is an assumption, and the paper
+that uses the method needs to state it.
+
+### Comparing against two criteria
+
+When a long-term and a short-term criterion both apply, one set of trials is
+compared against both:
+
+- The long-term criterion has a lower interference level that may be exceeded
+  for a larger percentage of time. Compare it with a lower Monte Carlo
+  percentile (for example, the 80th, for a criterion that may be exceeded
+  20% of the time).
+- The short-term criterion has a higher level that may be exceeded only
+  rarely. Compare it with a high Monte Carlo percentile (for example, the
+  99.99th, for a criterion that may be exceeded 0.01% of the time).
+
+The same trials can serve both comparisons. The list is sized for each, and
+the larger list applies.
+
+### How many trials a small percentage needs
+
+A percentile is only as good as the number of trials behind it. With 1,000
+trials, every percentile above the 99.9th is simply the largest trial: there
+is less than one trial in the tail. To estimate the 99.99th percentile with
+about 10 trials beyond it, you need about 100,000 trials. The sampling-error
+rule in Section 1 gives the uncertainty for any percentile and any number of
+trials. A short-term criterion needs either many more trials or a method that
+targets the tail directly.
+
+## 12. What is random and what is fixed
+
+| Quantity | Random or fixed | How it varies | Source in this paper |
+| --- | --- | --- | --- |
+| Base station EIRP | Random | Uniform draw into the EIRP table for the direction toward the receiver | Section 3 |
+| Path loss | Random | Uniform draw of ITM time percentage, confidence fixed at 50% | Section 4 |
+| Clutter loss | Random | Uniform draw of P.2108 location percentage (production: urban and suburban base stations only) | Section 2 |
+| Base station locations, heights, azimuths | Fixed | From the deployment data | Not modeled here |
+| Antenna gains toward the receiver | Fixed | From the antenna patterns and geometry | Not modeled here (planned) |
+| Frequency-dependent rejection, system loss, polarization loss | Fixed | Set by equipment and frequencies | Section 13 |
+| Receiver noise and the protection criterion | Fixed | Set by the federal system | Section 13 |
+
+Every random input gets its own independent draw, for every base station, in
+every trial. Everything else is the same in every trial.
+
+The method produces three outputs:
+
+- **The turn-off list** for each candidate radius (simulation 1).
+- **Pass or fail** for each candidate radius (simulation 2).
+- **The zone radius**, the smallest radius that passes (Section 10).
+
+## 13. Link budget terms
+
+This section defines terms that reviewers asked about, with the arithmetic
+that shows when each one matters.
+
+### Receiver noise
+
+The receiver noise power is
+
+$$
+N\ (\mathrm{dBm}) = 10\log_{10}(kT) + 10\log_{10}(B) + \mathrm{NF},
+$$
+
+where $k$ is Boltzmann's constant, $T$ is the noise temperature in kelvin,
+$B$ is the receiver bandwidth, and NF is the receiver noise figure in dB. At
+the standard temperature of 290 K, $10\log_{10}(kT)$ is −174 dBm per hertz,
+which is the same as −114 dBm per megahertz. The two forms give the same
+answer as long as $B$ is in the matching unit: hertz with −174, megahertz with
+−114. A different temperature changes the first term by
+$10\log_{10}(T/290)$ dB.
+
+The interference limit follows from the noise: the maximum interference power
+is $N$ plus the interference-to-noise ratio (I/N) criterion. For example,
+with $B$ = 1 MHz, NF = 5 dB, and an I/N criterion of −10 dB, $N$ is
+−109 dBm and the limit is −119 dBm.
+
+### System loss and frequency-dependent rejection
+
+Each base station's interference is reduced by the receiver's system loss and
+by frequency-dependent rejection (FDR), which depends on how far the base
+station's channel is from the receiver's. The aggregate adds the base
+stations in watts:
+
+$$
+I_\mathrm{agg} = \sum_i 10^{(P_i - L_\mathrm{sys} - \mathrm{FDR}_i)/10}.
+$$
+
+If every base station has the same system loss and the same FDR, both
+factors come out of the sum, and you can subtract them once from the
+aggregate. If the FDR differs between base stations, because they use
+different channels or bandwidths, you must apply it to each base station
+before adding. Two base stations show the difference:
+
+| | Base station 1 | Base station 2 | Aggregate |
+| --- | --- | --- | --- |
+| Received power before FDR | −100 dBm | −103 dBm | −98.2 dBm |
+| FDR | 10 dB | 20 dB | |
+| Correct: FDR applied to each, then added | −110 dBm | −123 dBm | −109.8 dBm |
+| Wrong: a common 10 dB applied after adding | | | −108.2 dBm |
+
+Here the shortcut overstates the aggregate by 1.6 dB. The production
+simulation and this paper assume every base station uses the same channel,
+so the shortcut is exact; the working paper needs to state that assumption.
+
+### Polarization loss
+
+A base station antenna radiates on two slant polarizations, +45° and −45°.
+A receive antenna with one linear polarization (horizontal or vertical)
+collects half the power of each slant polarization, which is a 3 dB loss for
+each. Two bookkeeping rules follow:
+
+- **Count the EIRP and the loss on the same basis.** If the EIRP is the total
+  of both polarizations, subtract 3 dB for a single-polarization receiver. If
+  the EIRP is for one polarization, as the CTIA heatmap is (Section 3), a
+  single-polarization receiver collects half of each slant, which adds back
+  up to the power of one polarization: apply no further loss.
+- **A dual-polarized receiver that combines both channels** collects the
+  total, with no polarization loss.
+
+At long range, scattering mixes the polarizations. On average, a
+single-polarization receiver still collects half the total power, so the
+3 dB average holds, but the value in any one trial varies.
+
+### ITM confidence and ground constants
+
+ITM's *confidence* covers the variation among paths that look the same to
+the model: unmodeled terrain detail, vegetation, and local surroundings.
+Confidence 50% gives the median path. The production simulation and this
+paper hold it at 50%. Section 4 shows that moving it to 10% lowers the
+median loss on the 100 km path by 7.1 dB, which is why the setting needs to
+be stated.
+
+ITM takes the ground's relative permittivity and conductivity as two inputs
+and combines them internally into the complex permittivity,
+$\varepsilon_r - j\,18\sigma/f_\mathrm{GHz}$. The values used here, 25 and
+0.02 S/m, are ITM's "good ground" values. The ground constants affect the
+two-ray region near the base station and smooth-earth diffraction; they have
+little effect on a troposcatter path like the 100 km example.
+
+### When clutter loss applies
+
+P.2108-1 Section 3.2 gives the extra loss for a terminal inside urban or
+suburban clutter. The production simulation applies it only to urban and
+suburban base stations. It doesn't cover energy that reaches a receiver by
+another route. A weather radar, for example, can receive base station energy
+scattered from the precipitation it is observing. That path bypasses the
+clutter around the base station and needs separate treatment.
+
+### EIRP level and maximum authorized power
+
+The CTIA table is a measured distribution of 15-minute average power
+(Section 3). Some reviewers propose scaling it so that its 100th percentile
+equals the maximum authorized EIRP. That shift raises every draw by the same
+number of decibels, and the received power and aggregate rise by the same
+amount. It also changes what the table means: the top of the distribution
+becomes the peak authorized level instead of the highest measured 15-minute
+average. This paper treats the choice as a sensitivity case, not a
+correction.
+
+### Model versions
+
+| Model | Version used here | Checked |
+| --- | --- | --- |
+| Clutter loss | Recommendation ITU-R P.2108-1 (09/2021) | November 2026 |
+| Path loss | NTIA/ITS Irregular Terrain Model v1.4, through the `matlab_itm` port | November 2026 |
+| AAS antenna model behind the EIRP table | Recommendation ITU-R M.2101-0 (02/2017), extended AAS | As cited by the CTIA paper |
+| Frequency-dependent rejection | Recommendation ITU-R SM.337-6 | Not used in this paper's examples |
+
+## 14. Differences from the production simulation
 
 This paper simplifies the production simulation so that each step is easy to
 see. An engineer who compares the two finds these differences:
@@ -676,13 +1065,15 @@ see. An engineer who compares the two finds these differences:
 Section 2 and Section 4 show that the grid and linear interpolation change
 the percentiles by less than 0.1 dB.
 
-## 9. Planned sections
+## 15. Planned sections
 
-- **From single links to an aggregate, and the turn-off list.** How the median
-  (50%) values set the order of the turn-off list, how each Monte Carlo
-  iteration produces its own list size, and how a percentile of those sizes
-  (for example, the 80th of 1,000) sets the final list. For details, see the
-  [plan for the turn-off list section](PLAN_turn_off_list_section.md).
+- **A running example.** One synthetic deployment of about 20 base stations
+  around one radar site, carried through every step from the inputs to the
+  zone radius.
+- **Experiments on the method.** Fixed order against per-trial order on a
+  larger deployment, one simulation against two, and a time draw shared by
+  all base stations in a trial ([explainer
+  plan](PLAN_explain_aggregate_zones.md)).
 - **The radar receiver.** Protection threshold, antenna pattern, and azimuth
   scan for the 2.7 GHz case.
 
@@ -697,3 +1088,9 @@ the percentiles by less than 0.1 dB.
 1. `matlab_itm`, <https://github.com/nicklasorte/matlab_itm>.
 1. `FSS_Neighborhood`, <https://github.com/nicklasorte/FSS_Neighborhood>.
 1. `General_Movelist`, <https://github.com/nicklasorte/General_Movelist>.
+1. CTIA, *7 GHz CTIA Cellular Network Characteristics* working paper,
+   August 10, 2026.
+1. Recommendation ITU-R M.2101-0, *Modelling and simulation of IMT networks
+   and systems for use in sharing and compatibility studies*, 02/2017.
+1. Recommendation ITU-R SM.337-6, *Frequency and distance separations*,
+   10/2008.

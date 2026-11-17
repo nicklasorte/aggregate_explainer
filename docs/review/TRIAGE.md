@@ -28,7 +28,7 @@ the deferred items.
 | Finding | Reason |
 | --- | --- |
 | B-05 (shared atmosphere across base stations) | Belongs in the planned aggregate sections: add a sensitivity case with one time draw shared by all stations in a trial. |
-| B-08 (what the CTIA percentiles range over) | Needs information from Nick. Marked TODO in the paper. |
+| B-08 (what the CTIA percentiles range over) | Fixed: Section 3 now describes the CTIA heatmap method (60 cells, five 15-minute periods). Which CTIA dataset the workbook comes from is still TODO. |
 | B-30 (figure captions say what to look at) | Fold into the next figure pass. |
 | A-04, A-05 (convolution check 0.005 dB low; loose tolerance) | Negligible for the paper; tighten with the next test pass. |
 | A-06, A-08, A-09, A-10 (test gaps: seeding pattern, column-to-input mapping, grid values, same-seed tests) | Add in the next test pass; the mutation-testing rung in the plan covers them. |

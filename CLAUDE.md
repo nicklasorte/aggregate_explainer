@@ -134,6 +134,9 @@ Markdown.
   on the 2.7 GHz aggregate zones working paper to explainer sections. The
   review comments themselves are pre-decisional and are not in this
   repository; don't add them.
-- The turn-off list section teaches the simple descending sort by median
+- Section 3 describes how CTIA built the EIRP heatmap, citing the CTIA
+  working paper (August 10, 2026). EIRP and received power in the paper are
+  per megahertz; the text writes dBm for short.
+- The turn-off list section (Section 8, example 07) teaches the simple descending sort by median
   received power first, then gives the near-optimal order (`tf_opt=1`) one
   paragraph.

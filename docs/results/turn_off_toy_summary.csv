@@ -1,0 +1,2 @@
+percentile,percentile_of_sizes,list_size,validation_aggregate_dbm,limit_dbm,passes,trials_meeting_limit_pct,mean_size_fixed,mean_size_free
+80,4,5,-100.065216191171,-99,1,89.3,3.343,2.637

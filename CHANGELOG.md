@@ -6,6 +6,15 @@ Notable changes to the working paper and code. Newest first.
 
 ### Added
 
+- Example 07 and paper Sections 8-13: how the turn-off list is built (fixed
+  median order, one cut point per trial, 80th percentile plus one), the two
+  Monte Carlo simulations, the radius search, five meanings of
+  "percentage," what is random and what is fixed, and link budget terms
+  (noise, FDR, polarization, ITM confidence and ground, clutter scope, EIRP
+  level, model versions). Old Sections 8 and 9 are now 14 and 15.
+- Paper Section 3: how CTIA built the EIRP heatmap (60 measured cells, five
+  15-minute periods, extrapolated to 7 GHz), from the CTIA working paper of
+  August 10, 2026. Resolves review item B-08.
 - `docs/PLAN_explain_aggregate_zones.md`: plan for what the explainer must
   teach, based on the technical questions raised in review of the aggregate
   zones working paper.

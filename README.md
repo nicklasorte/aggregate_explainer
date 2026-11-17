@@ -26,3 +26,4 @@ buildtool examples                 % rebuilds docs/figures and docs/results
 | `example_04_single_bs_100km_rev2` | EIRP − path loss − clutter loss for one base station at 100 km | `docs/figures/fig04_single_bs_100km_2700mhz.png` |
 | `example_05_spread_rev1` | Which input sets the spread of received power | `docs/figures/fig05_single_bs_100km_spread.png` |
 | `example_06_itm_vs_distance_rev1` | ITM path loss distribution from 1 km to 200 km, flat terrain | `docs/figures/fig07_itm_vs_distance_2700mhz.png` |
+| `example_07_turn_off_list_toy_rev1` | Turn-off list worked example: fixed median order, list sizes over 1,000 trials, and the validation run | `docs/figures/fig08_turn_off_list_toy.png` |

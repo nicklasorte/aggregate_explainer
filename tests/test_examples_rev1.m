@@ -278,6 +278,39 @@ tc.assumeFalse(tc.TestData.has_itm, "matlab_itm is on the path; error path not r
 tc.verifyError(@() example_06_itm_vs_distance_rev1(save_out=false), "aggregate_explainer:NoItm");
 end
 
+% ---------------- example 07 ----------------
+
+function test_example07(tc)
+out = struct();
+evalc("out = example_07_turn_off_list_toy_rev1(save_out=false);");
+tc.verifyTrue(all(out.size_fixed >= 0 & out.size_fixed <= 6));
+% Choosing freely never needs more stations than the fixed order.
+tc.verifyTrue(all(out.size_free <= out.size_fixed));
+% The list is the rounded-up percentile plus one, capped at six.
+tc.verifyEqual(out.list_size, min(ceil(prctile(out.size_fixed, 80)) + 1, 6));
+tc.verifyEqual(out.q_agg, prctile(out.agg_dbm, 80), "AbsTol", 1e-12);
+tc.verifyEqual(out.passes, out.q_agg <= -99);
+tc.verifyEqual(sum(out.size_dist.fixed_order_pct), 100, "AbsTol", 1e-9);
+end
+
+function test_example07_cut_points_by_hand(tc)
+% With no spread, every trial sees the medians. Removing the first two
+% stations leaves -98.4 dBm (over the -99 dBm limit); removing three leaves
+% -100.9 dBm (under it). So every trial needs exactly 3 off.
+out = struct();
+evalc("out = example_07_turn_off_list_toy_rev1(sigma_db=1e-9, n_trials=10, save_out=false);");
+tc.verifyEqual(unique(out.size_fixed), 3);
+end
+
+function test_example07_writes_files(tc)
+root = temp_repo_root(tc);
+evalc("example_07_turn_off_list_toy_rev1(n_trials=200, out_root=root);");
+for f = ["turn_off_toy_list_sizes.csv", "turn_off_toy_first_trials.csv", "turn_off_toy_summary.csv"]
+    tc.verifyTrue(isfile(fullfile(root, "docs", "results", f)));
+end
+tc.verifyTrue(isfile(fullfile(root, "docs", "figures", "fig08_turn_off_list_toy.png")));
+end
+
 % ---------------- setup and run-all ----------------
 
 function test_setup_adds_paths(tc)
@@ -300,11 +333,11 @@ tc.assumeTrue(tc.TestData.has_itm, "matlab_itm is not on the path");
 root = temp_repo_root(tc);
 out = struct();
 evalc("out = run_all_examples_rev1(n_draws=300, out_root=root);");
-tc.verifyEqual(string(fieldnames(out))', ["uniform", "p2108", "eirp", "itm", "single_bs", "spread", "itm_distance"]);
+tc.verifyEqual(string(fieldnames(out))', ["uniform", "p2108", "eirp", "itm", "single_bs", "spread", "itm_distance", "turn_off_toy"]);
 figs = dir(fullfile(root, "docs", "figures", "*.png"));
 csvs = dir(fullfile(root, "docs", "results", "*.csv"));
-tc.verifyNumElements(figs, 7);
-tc.verifyNumElements(csvs, 10);
+tc.verifyNumElements(figs, 8);
+tc.verifyNumElements(csvs, 13);
 end
 
 % ---------------- build plan ----------------
