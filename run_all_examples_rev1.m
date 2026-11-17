@@ -1,6 +1,6 @@
 function results = run_all_examples_rev1(options)
 %RUN_ALL_EXAMPLES_REV1 Rebuild every figure and results table for the working paper.
-%   results = RUN_ALL_EXAMPLES_REV1() runs setup, then examples 01-05, and
+%   results = RUN_ALL_EXAMPLES_REV1() runs setup, then examples 00-06, and
 %   writes docs/figures/*.png and docs/results/*.csv.
 %
 %   Name-value options (defaults reproduce the paper):
@@ -18,9 +18,11 @@ end
 
 setup_aggregate_explainer_rev1();
 common = {"n_draws", options.n_draws, "save_out", options.save_out, "out_root", options.out_root};
+results.uniform = example_00_uniform_input_rev1(common{:});
 results.p2108 = example_01_p2108_2km_2700mhz_rev1(common{:});
 results.eirp = example_02_bs_eirp_distribution_rev2(common{:});
 results.itm = example_03_itm_flat_100km_2700mhz_rev1(common{:});
 results.single_bs = example_04_single_bs_100km_rev2(common{:});
 results.spread = example_05_spread_rev1(common{:});
+results.itm_distance = example_06_itm_vs_distance_rev1(save_out=options.save_out, out_root=options.out_root);
 end

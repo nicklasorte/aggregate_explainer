@@ -130,9 +130,15 @@ marks = [50 95 99];
 for k = 1:3
     v = prx_mc(pct == marks(k));
     xline(ax, v, ":", Color=c.dark_blue, LineWidth=1);
-    text(ax, v, max(dens)*label_y(k), sprintf(" %dth: %.1f", marks(k), v), ...
-        FontName=c.font, FontSize=8, Color=c.dark_blue, ...
-        FontWeight=string(ifelse(marks(k) == 50, "normal", "bold")), VerticalAlignment="bottom");
+    align = "left";
+    label = sprintf(" %dth: %.1f", marks(k), v);
+    if marks(k) == 95                       % keep clear of the 99th-percentile line
+        align = "right";
+        label = sprintf("%dth: %.1f ", marks(k), v);
+    end
+    text(ax, v, max(dens)*label_y(k), label, FontName=c.font, FontSize=8, Color=c.dark_blue, ...
+        FontWeight=string(ifelse(marks(k) == 50, "normal", "bold")), VerticalAlignment="bottom", ...
+        HorizontalAlignment=align);
 end
 hold(ax, "off");
 style_axes_rev1(ax);

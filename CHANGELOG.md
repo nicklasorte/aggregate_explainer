@@ -6,6 +6,22 @@ Notable changes to the working paper and code. Newest first.
 
 ### Added
 
+- `docs/PLAN_explain_aggregate_zones.md`: plan for what the explainer must
+  teach, based on the technical questions raised in review of the aggregate
+  zones working paper.
+- Independent code and paper reviews (`docs/review/`), their triage, the
+  fixes, and a Google style pass on the paper; new paper Section 8 on
+  differences from the production simulation.
+
+- Example 06 and paper Section 4: the ITM path loss distribution at every
+  distance from 1 km to 200 km (spread under 2 dB within 10 km, peaking at
+  39.5 dB near 115 km).
+
+- Paper Section 1, "Why the inputs are uniform random numbers": the
+  inverse-transform argument, a ten-slice figure (example 00), simpler
+  alternatives and why they fall short, and rules for using uniform draws,
+  including the sampling error of a percentile.
+
 - EIRP drawn from a normal distribution in dBm fitted to the CTIA table
   (`fit_eirp_truncated_normal_rev1`, example 02 rev2), replacing the spline,
   whose two peaks came from interpolation. Largest misfit 0.7 dB.

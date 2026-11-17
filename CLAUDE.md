@@ -127,8 +127,13 @@ Markdown.
   is the modeled (ITU-R M.2101-0 AAS) way to produce a table in the same
   layout. The table is from 7 GHz work; using it at 2.7 GHz is an open
   assumption (marked TODO in the paper).
-- `docs/PLAN_style_and_review.md` plans an independent review (first) and a
-  Google style pass (second) of the paper and code. Not yet run.
+- `docs/PLAN_style_and_review.md` plans an independent review and a Google
+  style pass. Both ran once on 2026-11-17; `docs/review/TRIAGE.md` records
+  each finding as fixed or deferred. Read it before changing the paper.
+- `docs/PLAN_explain_aggregate_zones.md` maps reviewers' technical questions
+  on the 2.7 GHz aggregate zones working paper to explainer sections. The
+  review comments themselves are pre-decisional and are not in this
+  repository; don't add them.
 - The turn-off list section teaches the simple descending sort by median
   received power first, then gives the near-optimal order (`tf_opt=1`) one
   paragraph.

@@ -34,6 +34,34 @@ root = string(tc.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).F
 copyfile(fullfile(tc.TestData.repo_root, "data"), fullfile(root, "data"));
 end
 
+% ---------------- example 00 ----------------
+
+function test_example00(tc)
+out = struct();
+evalc("out = example_00_uniform_input_rev1(n_draws=20000, save_out=false);");
+s = out.slices;
+tc.verifyEqual(height(s), 10);
+% Every slice holds about 10% of the draws.
+tc.verifyEqual(s.share_of_draws_pct, 10*ones(10, 1), "AbsTol", 0.6);
+tc.verifyEqual(sum(s.share_of_draws_pct), 100, "AbsTol", 1e-9);
+% Slices are contiguous, and the middle slices are the narrowest.
+tc.verifyEqual(s.loss_to_db(1:9), s.loss_from_db(2:10), "AbsTol", 1e-9);
+tc.verifyLessThan(max(s.width_db(5:6)), min(s.width_db([1 2 9 10])));
+% The example draws follow u -> p = 100 u -> loss.
+e = out.examples;
+tc.verifyEqual(e.percentage, 100*e.u, "AbsTol", 1e-12);
+expected = p2108_terrestrial_clutter_loss_vector_rev2([], 2700, 2, e.percentage);
+tc.verifyEqual(e.clutter_loss_db, expected(:), "AbsTol", 1e-12);
+end
+
+function test_example00_writes_files(tc)
+root = temp_repo_root(tc);
+evalc("example_00_uniform_input_rev1(n_draws=500, out_root=root);");
+tc.verifyTrue(isfile(fullfile(root, "docs", "results", "uniform_input_slices.csv")));
+tc.verifyTrue(isfile(fullfile(root, "docs", "results", "uniform_input_example_draws.csv")));
+tc.verifyTrue(isfile(fullfile(root, "docs", "figures", "fig00_uniform_input.png")));
+end
+
 % ---------------- example 01 ----------------
 
 function test_example01(tc)
@@ -215,6 +243,41 @@ tc.assumeFalse(tc.TestData.has_itm, "matlab_itm is on the path; error path not r
 tc.verifyError(@() example_04_single_bs_100km_rev2(save_out=false), "aggregate_explainer:NoItm");
 end
 
+% ---------------- example 06 (needs matlab_itm) ----------------
+
+function test_example06(tc)
+tc.assumeTrue(tc.TestData.has_itm, "matlab_itm is not on the path");
+out = struct();
+evalc("out = example_06_itm_vs_distance_rev1(dist_km=[1 10 50 100 200], save_out=false);");
+t = out.table;
+tc.verifyEqual(t.distance_km', [1 10 50 100 200]);
+% Matches example 03 at 100 km.
+row = t(t.distance_km == 100, :);
+tc.verifyEqual([row.p01_db row.p50_db row.p99_db], [174.38 197.13 213.53], "AbsTol", 0.01);
+tc.verifyEqual(row.free_space_db, 141.08, "AbsTol", 0.01);
+% Percentiles increase across each row; loss and free-space loss grow with distance.
+p = t{:, startsWith(t.Properties.VariableNames, "p") & endsWith(t.Properties.VariableNames, "_db")};
+tc.verifyTrue(all(diff(p, 1, 2) >= 0, "all"));
+tc.verifyTrue(issorted(t.free_space_db));
+tc.verifyTrue(issorted(t.p50_db));
+tc.verifyGreaterThanOrEqual(t.p50_db, t.free_space_db - 1);   % two-ray lobes can dip just under free space
+tc.verifyEqual(t.spread_1_99_db, t.p99_db - t.p01_db, "AbsTol", 1e-12);
+tc.verifyEqual(out.modes.from_km(1), 1);
+end
+
+function test_example06_writes_files(tc)
+tc.assumeTrue(tc.TestData.has_itm, "matlab_itm is not on the path");
+root = temp_repo_root(tc);
+evalc("example_06_itm_vs_distance_rev1(dist_km=[1 50 100], out_root=root);");
+tc.verifyTrue(isfile(fullfile(root, "docs", "results", "itm_vs_distance_2700mhz.csv")));
+tc.verifyTrue(isfile(fullfile(root, "docs", "figures", "fig07_itm_vs_distance_2700mhz.png")));
+end
+
+function test_example06_without_itm_errors(tc)
+tc.assumeFalse(tc.TestData.has_itm, "matlab_itm is on the path; error path not reachable");
+tc.verifyError(@() example_06_itm_vs_distance_rev1(save_out=false), "aggregate_explainer:NoItm");
+end
+
 % ---------------- setup and run-all ----------------
 
 function test_setup_adds_paths(tc)
@@ -237,11 +300,11 @@ tc.assumeTrue(tc.TestData.has_itm, "matlab_itm is not on the path");
 root = temp_repo_root(tc);
 out = struct();
 evalc("out = run_all_examples_rev1(n_draws=300, out_root=root);");
-tc.verifyEqual(string(fieldnames(out))', ["p2108", "eirp", "itm", "single_bs", "spread"]);
+tc.verifyEqual(string(fieldnames(out))', ["uniform", "p2108", "eirp", "itm", "single_bs", "spread", "itm_distance"]);
 figs = dir(fullfile(root, "docs", "figures", "*.png"));
 csvs = dir(fullfile(root, "docs", "results", "*.csv"));
-tc.verifyNumElements(figs, 5);
-tc.verifyNumElements(csvs, 7);
+tc.verifyNumElements(figs, 7);
+tc.verifyNumElements(csvs, 10);
 end
 
 % ---------------- build plan ----------------

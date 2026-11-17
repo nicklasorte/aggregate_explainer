@@ -19,9 +19,10 @@ function fit = fit_eirp_truncated_normal_rev1(eirp_table)
 %   the 0th and 100th), solved with fminsearch over mu and log(sigma). The
 %   end points are matched exactly by the truncation.
 %
-%   Why: an 11-point table interpolated with a spline puts bumps in the
-%   density between table points. The fit gives a smooth bell shape that
-%   stays within the measured range. A normal distribution in dB is a
+%   Why: an 11-point table interpolated with a spline shows bumps in the
+%   density that the table is too coarse to confirm. The fit gives a smooth
+%   bell shape that stays within the measured range. Its upper tail is a
+%   little lighter than the table's (0.7 dB low at the 90th percentile). A normal distribution in dB is a
 %   lognormal distribution in linear power.
 %
 %   See also makedist, truncate, fminsearch, read_bs_eirp_distribution_rev1.

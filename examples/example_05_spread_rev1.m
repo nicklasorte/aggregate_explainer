@@ -7,8 +7,9 @@ function results = example_05_spread_rev1(options)
 %   P_rx = EIRP - L_path - L_clutter. It also reports:
 %     - each input's share of the output variance (independent terms in dB:
 %       variances add), and
-%     - the "worst-case stack": the 99th percentile EIRP, the 1st percentile
-%       path loss, and the 1st percentile clutter loss added together.
+%     - the "1%-each stack": the 99th percentile EIRP, the 1st percentile
+%       path loss, and the 1st percentile clutter loss added together. With
+%       independent inputs, that combination has a probability near 1e-6.
 %
 %   Writes docs/results/single_bs_100km_spread.csv and
 %   docs/figures/fig05_single_bs_100km_spread.png.
@@ -71,7 +72,7 @@ p99_all = p(1, 5);
 fprintf("Spread of received power, one base station at 100 km\n");
 disp(tbl);
 disp(share);
-fprintf("  worst-case stack (99th EIRP, 1st path loss, 1st clutter): %.1f dBm\n", worst_stack_dbm);
+fprintf("  1%%-each stack (99th EIRP, 1st path loss, 1st clutter): %.1f dBm\n", worst_stack_dbm);
 fprintf("  99th percentile of the sum: %.1f dBm (%.1f dB lower)\n", p99_all, worst_stack_dbm - p99_all);
 
 fig = local_figure(tbl, share, worst_stack_dbm);
@@ -114,7 +115,7 @@ for s = 1:n
         VerticalAlignment="middle");
 end
 plot(ax, worst_stack_dbm, y(1), "d", MarkerSize=6, MarkerFaceColor=c.purple, MarkerEdgeColor="none");
-text(ax, worst_stack_dbm, y(1) + 0.32, "worst-case stack", FontName=c.font, FontSize=7.5, ...
+text(ax, worst_stack_dbm, y(1) + 0.32, sprintf("1%%-each stack: %.1f", worst_stack_dbm), FontName=c.font, FontSize=7.5, ...
     Color=c.purple, FontWeight="bold", HorizontalAlignment="center", VerticalAlignment="bottom");
 hold(ax, "off");
 style_axes_rev1(ax, YGrid=false, XGrid=true);

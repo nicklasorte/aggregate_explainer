@@ -10,7 +10,9 @@ This plan covers two jobs:
 - **Review.** Have a reviewer that didn't write the paper or the code try to
   find what is wrong with them.
 
-Nothing in this plan has run yet.
+**Status (2026-11-17):** Steps 1, 2, 4, 5, and 6 have run once. The reviews
+and what was done with each finding are in [review/TRIAGE.md](review/TRIAGE.md).
+Steps 3 and 7, Nick's triage and final read, are open.
 
 ## Order of work
 
