@@ -27,7 +27,7 @@ v = [ 0.5   0.25 50    17.4
       3.5   1    99.9  42.8];
 for k = 1:height(v)
     L = p2108_terrestrial_clutter_loss_vector_rev2([], 1000*v(k,1), v(k,2), v(k,3));
-    tc.verifyEqual(L, v(k,4), AbsTol=0.05, ...
+    tc.verifyEqual(L, v(k,4), "AbsTol", 0.05, ...
         sprintf("f=%g GHz, d=%g km, p=%g", v(k,1), v(k,2), v(k,3)));
 end
 end
