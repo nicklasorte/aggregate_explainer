@@ -37,8 +37,11 @@ curve that maps a percentage to a value, and the distribution that comes out.
 
 The received power from one base station in one iteration is then:
 
-> received power (dBm) = EIRP draw − path loss draw − clutter loss draw
-> + antenna gains
+$$
+P_\mathrm{rx}\ (\mathrm{dBm}) = \mathrm{EIRP} - L_\mathrm{path} - L_\mathrm{clutter} + G_\mathrm{antennas}
+$$
+
+Each term on the right except the antenna gains is a separate draw.
 
 Section 5 (planned) covers how those per-station powers are added and how the
 turn-off list is built.
@@ -56,18 +59,19 @@ current version of the Recommendation. For frequency *f* (GHz), path length
 *d* (km), and location percentage *p*:
 
 | Equation | Expression |
-| --- | --- |
-| (4a) | *L*<sub>l</sub> = −2 log<sub>10</sub>(10<sup>−5 log<sub>10</sub>(*f*) − 12.5</sup> + 10<sup>−16.5</sup>) |
-| (5a) | *L*<sub>s</sub> = 32.98 + 23.9 log<sub>10</sub>(*d*) + 3 log<sub>10</sub>(*f*) |
-| (3b) | σ<sub>cb</sub> = √[(σ<sub>l</sub>² 10<sup>−0.2 *L*<sub>l</sub></sup> + σ<sub>s</sub>² 10<sup>−0.2 *L*<sub>s</sub></sup>) / (10<sup>−0.2 *L*<sub>l</sub></sup> + 10<sup>−0.2 *L*<sub>s</sub></sup>)], with σ<sub>l</sub> = 4 dB (4b) and σ<sub>s</sub> = 6 dB (5b) |
-| (3a) | *L*<sub>ctt</sub> = −5 log<sub>10</sub>(10<sup>−0.2 *L*<sub>l</sub></sup> + 10<sup>−0.2 *L*<sub>s</sub></sup>) − σ<sub>cb</sub> *Q*<sup>−1</sup>(*p*/100) |
-| (6) | *L*<sub>ctt</sub> may not exceed the value computed for *d* = 2 km |
+| ---- | -------------------------------------------------------------------------- |
+| (4a) | $L_\mathrm{l} = -2\log_{10}\left(10^{-5\log_{10}(f) - 12.5} + 10^{-16.5}\right)$ |
+| (5a) | $L_\mathrm{s} = 32.98 + 23.9\log_{10}(d) + 3\log_{10}(f)$ |
+| (3b) | $\sigma_\mathrm{cb} = \sqrt{\dfrac{\sigma_\mathrm{l}^2\,10^{-0.2 L_\mathrm{l}} + \sigma_\mathrm{s}^2\,10^{-0.2 L_\mathrm{s}}}{10^{-0.2 L_\mathrm{l}} + 10^{-0.2 L_\mathrm{s}}}}$ |
+| (4b), (5b) | $\sigma_\mathrm{l} = 4$ dB, $\sigma_\mathrm{s} = 6$ dB |
+| (3a) | $L_\mathrm{ctt} = -5\log_{10}\left(10^{-0.2 L_\mathrm{l}} + 10^{-0.2 L_\mathrm{s}}\right) - \sigma_\mathrm{cb}\,Q^{-1}(p/100)$ |
+| (6) | $L_\mathrm{ctt}$ may not exceed the value computed for *d* = 2 km |
 
-*Q*<sup>−1</sup> is the inverse complementary normal distribution function.
+$Q^{-1}$ is the inverse complementary normal distribution function.
 The model covers 0.5 to 67 GHz and paths of at least 0.25 km (1 km when the
 correction is applied at both ends).
 
-Equation (3a) is a median term minus σ<sub>cb</sub> times a standard normal
+Equation (3a) is a median term minus $\sigma_\mathrm{cb}$ times a standard normal
 quantile. In other words, **P.2108 clutter loss is a normal distribution in
 dB**, and (3a) is its inverse CDF.
 
@@ -77,12 +81,12 @@ At *f* = 2.7 GHz and *d* = 2 km:
 
 | Term | Value |
 | --- | --- |
-| *L*<sub>l</sub> (4a) | 29.30 dB |
-| *L*<sub>s</sub> (5a) | 41.47 dB |
-| σ<sub>cb</sub> (3b) | 4.01 dB |
-| Median *L*<sub>ctt</sub> (3a, *p* = 50) | 29.29 dB |
+| $L_\mathrm{l}$ (4a) | 29.30 dB |
+| $L_\mathrm{s}$ (5a) | 41.47 dB |
+| $\sigma_\mathrm{cb}$ (3b) | 4.01 dB |
+| Median $L_\mathrm{ctt}$ (3a, *p* = 50) | 29.29 dB |
 
-*L*<sub>s</sub> is 12 dB above *L*<sub>l</sub>, so the *L*<sub>l</sub> term
+$L_\mathrm{s}$ is 12 dB above $L_\mathrm{l}$, so the $L_\mathrm{l}$ term
 controls the result: at 2 km the loss is at its ceiling, a normal distribution
 with a 29.3 dB median and a 4.0 dB standard deviation.
 
@@ -119,7 +123,7 @@ match. Two things changed in `_rev2`:
 - **Equation (6).** The original clamps the distance to 2 km before the
   calculation. The Recommendation and the NTIA code compute the loss at *d*
   and at 2 km and take the smaller. The two differ at high percentages on
-  paths shorter than 2 km, because σ<sub>cb</sub> changes with distance. At
+  paths shorter than 2 km, because $\sigma_\mathrm{cb}$ changes with distance. At
   3.5 GHz, 1 km, *p* = 99.9, the original returns 43.4 dB; the NTIA test
   vector is 42.8 dB. The largest difference found is 2.0 dB (1.6 GHz, 0.5 km,
   *p* = 99.9). At *p* ≤ 50, and at 2 km and beyond, there is no difference, so
@@ -144,12 +148,21 @@ steering. The simulation describes it with a table of percentiles for the
 0° azimuth, 0° elevation direction (`data/7Ghz 0azi 0ele EIRP.xlsx`, from
 FSS_Neighborhood). Values are in dBm.
 
-| Percentile | 0 | 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| EIRP (dBm) | 19.5 | 25.25 | 28 | 29.25 | 30.25 | 31.75 | 32.75 | 33.75 | 35.5 | 38.5 | 42.5 |
-| Offset from median (dB) | −12.25 | −6.5 | −3.75 | −2.5 | −1.5 | 0 | 1 | 2 | 3.75 | 6.75 | 10.75 |
+| Percentile (%) | EIRP (dBm) | Offset from median (dB) |
+| --- | --- | --- |
+| 0 | 19.5 | −12.25 |
+| 10 | 25.25 | −6.5 |
+| 20 | 28 | −3.75 |
+| 30 | 29.25 | −2.5 |
+| 40 | 30.25 | −1.5 |
+| 50 | 31.75 | 0 |
+| 60 | 32.75 | 1 |
+| 70 | 33.75 | 2 |
+| 80 | 35.5 | 3.75 |
+| 90 | 38.5 | 6.75 |
+| 100 | 42.5 | 10.75 |
 
-The simulation uses the last row. It sets a fixed median EIRP for each base
+The simulation uses the last column. It sets a fixed median EIRP for each base
 station and adds the offset drawn from this table. Only the shape of the
 distribution matters, not its absolute level.
 
@@ -199,7 +212,7 @@ elevation everywhere), 100 km long, sampled every 100 m.
 | Antenna heights | TX 30 m, RX 10 m above ground |
 | Confidence | 50 % |
 | Climate | 5, continental temperate |
-| Surface refractivity *N*<sub>0</sub> | 301 N-units |
+| Surface refractivity $N_0$ | 301 N-units |
 | Polarization | Vertical |
 | Ground | ε = 25, σ = 0.02 S/m |
 | Mode of variability | 13 (broadcast, no location variability) |

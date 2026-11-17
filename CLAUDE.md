@@ -29,7 +29,8 @@ the percentage into a value (clutter loss, EIRP, path loss).
 | `examples/` | One function per paper example, `example_NN_<topic>_revN.m`. Each writes `docs/figures/figNN_*.png` and `docs/results/*.csv`. |
 | `tests/` | `test_aggregate_explainer_rev1.m` (MATLAB unit tests). |
 | `data/` | Input tables, with provenance in `data/SOURCES.md`. |
-| `docs/working_paper.md` | The working paper. |
+| `docs/working_paper.md` | The working paper (source). |
+| `docs/working_paper.docx` | Word version, built from the Markdown by `docs/build/build_working_paper_docx.py`. Don't edit it by hand. |
 | `ext/` | Cloned dependencies (git-ignored). |
 
 ## Run
@@ -67,6 +68,12 @@ run_all_examples_rev1
   marking.
 - After changing an example, rerun it, commit the regenerated PNG and CSV,
   and update the numbers in `docs/working_paper.md`.
+- After changing `docs/working_paper.md` or a figure, rebuild the Word file
+  with `python3 docs/build/build_working_paper_docx.py` (needs pandoc 3.x and
+  python-docx) and commit it with the change.
+- Write math in the paper as LaTeX between `$` signs. GitHub renders it, and
+  the build turns it into native Word equations. Don't use HTML `<sub>` or
+  `<sup>`: pandoc drops raw HTML from Word output.
 
 ## Writing
 

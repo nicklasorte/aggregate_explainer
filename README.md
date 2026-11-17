@@ -4,7 +4,7 @@ A working paper and MATLAB examples that explain, one input at a time, how an
 aggregate interference Monte Carlo simulation works, using 2.7 GHz and a radar
 receiver as the case.
 
-- Paper: [docs/working_paper.md](docs/working_paper.md)
+- Paper: [docs/working_paper.md](docs/working_paper.md) (Word version: [docs/working_paper.docx](docs/working_paper.docx), rebuilt with `python3 docs/build/build_working_paper_docx.py`)
 - Instructions for contributors and Claude: [CLAUDE.md](CLAUDE.md)
 
 ## Quick start
