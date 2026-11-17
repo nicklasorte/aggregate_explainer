@@ -6,6 +6,13 @@ Notable changes to the working paper and code. Newest first.
 
 ### Added
 
+- Example 04 and paper Section 6: Monte Carlo of one base station at 100 km
+  (EIRP − ITM path loss − P.2108 clutter loss), checked against an exact
+  convolution. New `draw_uniform_columns_rev1` (independent substreams) and
+  `sum_of_independent_db_rev1`.
+- `docs/PLAN_style_and_review.md`: plan for the Google style pass and an
+  independent review of the code and paper.
+
 - Tests for all MATLAB code: `tests/test_src_extra_rev1.m` and
   `tests/test_examples_rev1.m` (48 tests in all). CI clones `matlab_itm` so
   the example 03 tests run there too.

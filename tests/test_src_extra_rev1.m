@@ -213,3 +213,56 @@ fig = plot_uniform_to_output_rev1(u, u, (1:99)', (1:99)');
 tc.addTeardown(@() close(fig));
 tc.verifyEmpty(findobj(fig, "Type", "line", "Marker", "o"));
 end
+
+% ---------------- draw_uniform_columns_rev1 ----------------
+
+function test_uniform_columns_shape_and_range(tc)
+u = draw_uniform_columns_rev1(1000, 3, 7);
+tc.verifySize(u, [1000 3]);
+tc.verifyTrue(all(u(:) > 0 & u(:) < 1));
+end
+
+function test_uniform_columns_independent(tc)
+u = draw_uniform_columns_rev1(50000, 4, 1);
+r = corr(u);
+tc.verifyLessThan(max(abs(r(~eye(4)))), 0.02);
+% No column repeats another, shifted by one row (the seed+k pitfall).
+tc.verifyFalse(isequal(u(2:end, 1), u(1:end-1, 2)));
+end
+
+function test_uniform_columns_reproducible(tc)
+a = draw_uniform_columns_rev1(100, 3, 11);
+b = draw_uniform_columns_rev1(100, 2, 11);
+tc.verifyEqual(a(:, 1:2), b);   % a column doesn't depend on how many follow
+tc.verifyNotEqual(a, draw_uniform_columns_rev1(100, 3, 12));
+end
+
+% ---------------- sum_of_independent_db_rev1 ----------------
+
+function test_sum_two_normals(tc)
+% N(10, 3) - N(4, 4) is N(6, 5): check median and 95th percentile.
+q1 = @(p) 10 + 3*norminv(p/100);
+q2 = @(p) 4 + 4*norminv(p/100);
+[x, cdf] = sum_of_independent_db_rev1({q1, q2}, [1 -1]);
+[c, i] = unique(cdf);
+tc.verifyEqual(interp1(c, x(i), 0.5), 6, "AbsTol", 0.02);
+tc.verifyEqual(interp1(c, x(i), 0.95), 6 + 5*norminv(0.95), "AbsTol", 0.05);
+tc.verifyEqual(cdf(end), 1, "AbsTol", 1e-9);
+tc.verifyTrue(all(diff(cdf) >= 0));
+end
+
+function test_sum_constant_shift(tc)
+% A constant term only shifts the distribution.
+qu = @(p) p/100;                 % uniform on (0, 1)
+qc = @(p) 5 + 0*p;
+[x, cdf] = sum_of_independent_db_rev1({qu, qc}, [1 1], bin_db=0.001);
+[c, i] = unique(cdf);
+tc.verifyEqual(interp1(c, x(i), 0.25), 5.25, "AbsTol", 0.002);
+end
+
+function test_sum_validation(tc)
+q = @(p) p;
+tc.verifyError(@() sum_of_independent_db_rev1({q, q}, 1), "aggregate_explainer:SumTerms");
+tc.verifyError(@() sum_of_independent_db_rev1({q}, 2), "MATLAB:validators:mustBeMember");
+tc.verifyError(@() sum_of_independent_db_rev1({@(p) Inf + p}, 1), "aggregate_explainer:SumTerms");
+end

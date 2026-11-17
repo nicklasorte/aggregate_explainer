@@ -131,6 +131,47 @@ tc.verifyError(@() example_03_itm_flat_100km_2700mhz_rev1(save_out=false), ...
     "aggregate_explainer:NoItm");
 end
 
+% ---------------- example 04 (needs matlab_itm) ----------------
+
+function test_example04(tc)
+tc.assumeTrue(tc.TestData.has_itm, "matlab_itm is not on the path");
+out = struct();
+evalc("out = example_04_single_bs_100km_rev1(n_draws=5000, save_out=false, out_root=tc.TestData.repo_root);");
+% Each draw is exactly EIRP - path loss - clutter loss.
+tc.verifyEqual(out.prx_dbm, out.eirp_dbm - out.path_db - out.clutter_db, "AbsTol", 1e-12);
+% Sum of medians: 31.75 - 197.13 - 29.29 dBm (examples 01-03).
+tc.verifyEqual(out.median_of_terms_dbm, 31.75 - 197.128 - 29.293, "AbsTol", 0.01);
+% Monte Carlo percentiles agree with the exact convolution.
+mid = out.table.percentile >= 5 & out.table.percentile <= 95;
+tc.verifyLessThan(max(abs(out.table.difference_db(mid))), 0.6);
+% Clutter at 100 km equals the 2 km distribution (Equation 6).
+tc.verifyEqual(median(out.clutter_db), 29.29, "AbsTol", 0.3);
+tc.verifyEqual(sum(out.spread.share_of_variance_pct), 100, "AbsTol", 3);
+tc.verifyEqual(height(out.table), 10);
+end
+
+function test_example04_inputs_independent(tc)
+tc.assumeTrue(tc.TestData.has_itm, "matlab_itm is not on the path");
+out = struct();
+evalc("out = example_04_single_bs_100km_rev1(n_draws=20000, save_out=false, out_root=tc.TestData.repo_root);");
+r = corr(out.u);
+tc.verifyLessThan(max(abs(r(~eye(3)))), 0.03);
+end
+
+function test_example04_writes_files(tc)
+tc.assumeTrue(tc.TestData.has_itm, "matlab_itm is not on the path");
+root = temp_repo_root(tc);
+evalc("example_04_single_bs_100km_rev1(n_draws=500, out_root=root);");
+tc.verifyTrue(isfile(fullfile(root, "docs", "results", "single_bs_100km_2700mhz.csv")));
+tc.verifyTrue(isfile(fullfile(root, "docs", "results", "single_bs_100km_2700mhz_spread.csv")));
+tc.verifyTrue(isfile(fullfile(root, "docs", "figures", "fig04_single_bs_100km_2700mhz.png")));
+end
+
+function test_example04_without_itm_errors(tc)
+tc.assumeFalse(tc.TestData.has_itm, "matlab_itm is on the path; error path not reachable");
+tc.verifyError(@() example_04_single_bs_100km_rev1(save_out=false), "aggregate_explainer:NoItm");
+end
+
 % ---------------- setup and run-all ----------------
 
 function test_setup_adds_paths(tc)
@@ -153,11 +194,11 @@ tc.assumeTrue(tc.TestData.has_itm, "matlab_itm is not on the path");
 root = temp_repo_root(tc);
 out = struct();
 evalc("out = run_all_examples_rev1(n_draws=300, out_root=root);");
-tc.verifyEqual(string(fieldnames(out))', ["p2108", "eirp", "itm"]);
+tc.verifyEqual(string(fieldnames(out))', ["p2108", "eirp", "itm", "single_bs"]);
 figs = dir(fullfile(root, "docs", "figures", "*.png"));
 csvs = dir(fullfile(root, "docs", "results", "*.csv"));
-tc.verifyNumElements(figs, 3);
-tc.verifyNumElements(csvs, 4);
+tc.verifyNumElements(figs, 4);
+tc.verifyNumElements(csvs, 6);
 end
 
 % ---------------- build plan ----------------

@@ -78,6 +78,8 @@ Markdown.
   mark unknown values `TODO`.
 - Random draws come from `draw_uniform_rev1` (a dedicated `RandStream`), never
   from the global generator, so every figure is reproducible from its seed.
+  When several inputs vary at once, use `draw_uniform_columns_rev1`: one
+  substream per input. Don't seed inputs with `seed`, `seed+1`, `seed+2`.
 - Each example function takes `save_out` and writes its figure with
   `exportgraphics` at 200 dpi. Figures carry the `DRAFT//PRE-DECISIONAL`
   marking.
@@ -115,6 +117,8 @@ Markdown.
   is the modeled (ITU-R M.2101-0 AAS) way to produce a table in the same
   layout. The table is from 7 GHz work; using it at 2.7 GHz is an open
   assumption (marked TODO in the paper).
+- `docs/PLAN_style_and_review.md` plans an independent review (first) and a
+  Google style pass (second) of the paper and code. Not yet run.
 - The turn-off list section teaches the simple descending sort by median
   received power first, then gives the near-optimal order (`tf_opt=1`) one
   paragraph.

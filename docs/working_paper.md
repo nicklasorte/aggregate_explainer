@@ -43,8 +43,8 @@ $$
 
 Each term on the right except the antenna gains is a separate draw.
 
-Section 5 (planned) covers how those per-station powers are added and how the
-turn-off list is built.
+Section 6 does this for one base station. Section 7 lists the planned sections
+on how per-station powers are added and how the turn-off list is built.
 
 ## 2. Example 1: clutter loss (ITU-R P.2108-1), 2 km, 2.7 GHz
 
@@ -314,7 +314,78 @@ lowers the median loss by 7.1 dB.
 All three use the same mechanism: one uniform draw, one curve. They differ in
 what the percentage stands for and in how wide the curve is.
 
-## 6. Planned sections
+## 6. Example 4: one base station at 100 km
+
+**Code:** `examples/example_04_single_bs_100km_rev1.m`,
+`src/draw_uniform_columns_rev1.m`, `src/sum_of_independent_db_rev1.m`
+
+### The calculation
+
+This example puts the three inputs together for one base station that is
+100 km from the receiver:
+
+$$
+P_\mathrm{rx} = \mathrm{EIRP} - L_\mathrm{path} - L_\mathrm{clutter}
+$$
+
+Each Monte Carlo draw does the following:
+
+1. Draws three independent uniform numbers, one for each input.
+1. Reads the EIRP table at the first, the ITM curve (Example 3) at the second,
+   and the P.2108 curve at the third. At 100 km, Equation (6) holds the
+   clutter loss at its 2 km distribution, the one in Example 1.
+1. Adds the three values in dB.
+
+The receive antenna gain is 0 dBi. The radar antenna comes in a later section.
+
+### Three distributions in, one distribution out
+
+![Received power from one base station at 100 km](figures/fig04_single_bs_100km_2700mhz.png)
+
+*Figure 4. Top: the three input distributions from 100,000 draws. Bottom left:
+the received power. Bottom right: its CDF from the Monte Carlo draws and from
+an exact calculation.*
+
+| Percentile | Monte Carlo (dBm) | Exact convolution (dBm) |
+| --- | --- | --- |
+| 1 | −216.80 | −216.83 |
+| 5 | −210.35 | −210.37 |
+| 10 | −206.92 | −206.90 |
+| 50 | −194.36 | −194.33 |
+| 80 | −185.50 | −185.46 |
+| 90 | −180.53 | −180.55 |
+| 95 | −176.43 | −176.34 |
+| 99 | −168.15 | −168.08 |
+
+The second column is a check that uses no random numbers. Because the three
+inputs are independent, the distribution of their sum is the convolution of
+their distributions. The two methods agree to within 0.1 dB.
+
+| Input | Standard deviation (dB) | Share of the output variance |
+| --- | --- | --- |
+| Path loss (ITM) | 8.20 | 63% |
+| EIRP | 4.87 | 22% |
+| Clutter loss (P.2108) | 4.02 | 15% |
+
+The example shows three things:
+
+- **Spreads add as variances, not as decibels.** The output standard deviation
+  is 10.3 dB, the root sum of squares of 8.20, 4.87, and 4.02. Path loss
+  supplies nearly two-thirds of the variance.
+- **You can't add percentiles.** Stacking the worst 1% of each input (99th
+  percentile EIRP, 1st percentile path loss, 1st percentile clutter loss)
+  gives −152.3 dBm. The 99th percentile of the actual sum is −168.1 dBm,
+  16 dB lower. All three inputs are almost never at their extremes in the
+  same draw, and the Monte Carlo simulation accounts for that.
+- **The median nearly survives; the tails don't.** Adding the three medians
+  gives −194.67 dBm, and the median of the sum is −194.36 dBm. But the
+  high-power tail is longer than the low-power tail: the 99th percentile is
+  26.2 dB above the median, and the 1st percentile is 22.4 dB below it.
+
+This is one base station. The aggregate from many stations is the subject of
+the planned sections.
+
+## 7. Planned sections
 
 - **From single links to an aggregate, and the turn-off list.** How the median
   (50 %) values set the order of the turn-off list, how each Monte Carlo

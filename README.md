@@ -22,3 +22,4 @@ buildtool examples                 % rebuilds docs/figures and docs/results
 | `example_01_p2108_2km_2700mhz_rev1` | ITU-R P.2108-1 clutter loss, 2 km, 2.7 GHz | `docs/figures/fig01_p2108_2km_2700mhz.png` |
 | `example_02_bs_eirp_distribution_rev1` | Base station EIRP percentile table | `docs/figures/fig02_bs_eirp_distribution.png` |
 | `example_03_itm_flat_100km_2700mhz_rev1` | ITM v1.4 point-to-point, flat terrain, 100 km, 2.7 GHz | `docs/figures/fig03_itm_flat_100km_2700mhz.png` |
+| `example_04_single_bs_100km_rev1` | EIRP − path loss − clutter loss for one base station at 100 km | `docs/figures/fig04_single_bs_100km_2700mhz.png` |
