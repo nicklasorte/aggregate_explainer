@@ -6,6 +6,12 @@ Notable changes to the working paper and code. Newest first.
 
 ### Added
 
+- Tests for all MATLAB code: `tests/test_src_extra_rev1.m` and
+  `tests/test_examples_rev1.m` (48 tests in all). CI clones `matlab_itm` so
+  the example 03 tests run there too.
+- `run_all_examples_rev1` takes `n_draws`, `save_out`, and `out_root`
+  options; defaults are unchanged.
+
 - EIRP provenance in the paper (Section 3): the table is CTIA field
   measurement data. New subsection on how such a table can be modeled
   (imt-matlab, ITU-R M.2101-0 AAS), and a flagged assumption that the 7 GHz

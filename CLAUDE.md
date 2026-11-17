@@ -27,7 +27,7 @@ the percentage into a value (clutter loss, EIRP, path loss).
 | `run_all_examples_rev1.m` | Rebuilds every figure and results table. |
 | `src/` | Reusable functions. |
 | `examples/` | One function per paper example, `example_NN_<topic>_revN.m`. Each writes `docs/figures/figNN_*.png` and `docs/results/*.csv`. |
-| `tests/` | `test_aggregate_explainer_rev1.m` (MATLAB unit tests). |
+| `tests/` | MATLAB unit tests: `test_aggregate_explainer_rev1.m` (models and reference values), `test_src_extra_rev1.m` (every `src/` function, including error paths and the plot helper), `test_examples_rev1.m` (each example, setup, run-all, and the build plan). Tests that need `matlab_itm` are filtered, not failed, when it isn't available. |
 | `data/` | Input tables, with provenance in `data/SOURCES.md`. |
 | `docs/working_paper.md` | The working paper (source). |
 | `docs/working_paper.docx` | Word version, built from the Markdown by `docs/build/build_working_paper_docx.py`. Don't edit it by hand. |
@@ -83,6 +83,9 @@ Markdown.
   marking.
 - After changing an example, rerun it, commit the regenerated PNG and CSV,
   and update the numbers in `docs/working_paper.md`.
+- Every function in `src/`, every example, and every root script has a test.
+  Add one with any new MATLAB file. Example tests use few draws and
+  `save_out=false`, or write to a `TemporaryFolderFixture`, never to `docs/`.
 - Add a line to `CHANGELOG.md` for every change a reader of the paper would
   notice.
 - After changing `docs/working_paper.md` or a figure, rebuild the Word file

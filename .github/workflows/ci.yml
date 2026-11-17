@@ -13,6 +13,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Get matlab_itm (used by example 03 tests)
+        run: |
+          git clone --depth 1 https://github.com/nicklasorte/matlab_itm ext/matlab_itm
+          git -C ext/matlab_itm log -1 --format='matlab_itm %h %cs'
+
       - uses: matlab-actions/setup-matlab@v2
         with:
           release: R2025b
