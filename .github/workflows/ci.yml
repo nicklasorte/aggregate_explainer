@@ -9,7 +9,7 @@ on:
 jobs:
   matlab:
     name: MATLAB check and tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # MATLAB R2025b does not support Ubuntu 26 yet
     steps:
       - uses: actions/checkout@v4
 
@@ -30,7 +30,7 @@ jobs:
 
   word-paper:
     name: Word paper is up to date
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # MATLAB R2025b does not support Ubuntu 26 yet
     steps:
       - uses: actions/checkout@v4
 
