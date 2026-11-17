@@ -6,6 +6,23 @@ Notable changes to the working paper and code. Newest first.
 
 ### Added
 
+- EIRP drawn from a normal distribution in dBm fitted to the CTIA table
+  (`fit_eirp_truncated_normal_rev1`, example 02 rev2), replacing the spline,
+  whose two peaks came from interpolation. Largest misfit 0.7 dB.
+- Example 05 and paper Section 7: where the spread of received power comes
+  from (path loss 64% of the variance; worst-case stacking overstates the
+  99th percentile by about 15 dB).
+- NTIA report styling for every figure: takeaway headline, subhead, source
+  line, marking, gray plus one accent, Times New Roman, 300 dpi
+  (`style_axes_rev1`, `figure_palette_rev1`, `add_figure_text_rev1`,
+  `plot_uniform_to_output_rev2`).
+
+### Removed
+
+- `example_02_bs_eirp_distribution_rev1`, `example_04_single_bs_100km_rev1`,
+  and `plot_uniform_to_output_rev1`, replaced by the revisions above (still
+  in the git history).
+
 - Example 04 and paper Section 6: Monte Carlo of one base station at 100 km
   (EIRP − ITM path loss − P.2108 clutter loss), checked against an exact
   convolution. New `draw_uniform_columns_rev1` (independent substreams) and

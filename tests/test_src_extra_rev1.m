@@ -187,31 +187,108 @@ g = sim_reliability_grid_rev1();
 tc.verifyError(@() sim_grid_draws_rev1(g, g, 1.5), "MATLAB:validators:mustBeInRange");
 end
 
-% ---------------- plot_uniform_to_output_rev1 ----------------
+% ---------------- plot_uniform_to_output_rev2 and figure helpers ----------------
 
-function test_plot_has_three_panels_and_marking(tc)
+function test_plot_has_three_panels_and_text(tc)
 u = draw_uniform_rev1(500, 1);
 x = 10 + 4*randn(RandStream("mrg32k3a", Seed=1), 500, 1);
-fig = plot_uniform_to_output_rev1(u, x, (1:99)', (1:99)', ...
-    title_str = "Test title", x_label = "Loss (dB)", ...
-    marker_pct = [10 50 90], marker_x = [10 50 90]);
+fig = plot_uniform_to_output_rev2(u, x, (1:99)', (1:99)', ...
+    Headline="Test headline", Subhead="Test subhead", Source="Source: test.", ...
+    XLabel="Loss (dB)", MarkerPct=[10 50 90], MarkerX=[10 50 90]);
 tc.addTeardown(@() close(fig));
 ax = findobj(fig, "Type", "axes");
 tc.verifyNumElements(ax, 3);
 titles = sort(string(arrayfun(@(a) a.Title.String, ax, UniformOutput=false)));
-tc.verifyEqual(titles', sort(["1. Input: uniform draws", "2. Mapping: inverse CDF", "3. Output distribution"]));
-t = findobj(fig, "Type", "tiledlayout");
-tc.verifyEqual(string(t.Title.String), "Test title");
-tc.verifyEqual(string(t.Subtitle.String), "DRAFT//PRE-DECISIONAL");
-markers = findobj(fig, "Type", "line", "Marker", "o");
-tc.verifyNumElements(markers, 1);
+tc.verifyEqual(titles', sort(["1. Draw a uniform number", "2. Read the curve", ...
+    "3. Repeat: the output distribution"]));
+strings = string(get(findall(fig, "Type", "textboxshape"), "String"));
+tc.verifyTrue(all(ismember(["Test headline", "Test subhead", "Source: test.", ...
+    "DRAFT//PRE-DECISIONAL"], strings)));
+tc.verifyNumElements(findobj(fig, "Type", "line", "Marker", "o", "MarkerFaceColor", "w"), 1);
 end
 
-function test_plot_without_markers(tc)
+function test_plot_traces_requested_draw(tc)
 u = draw_uniform_rev1(100, 2);
-fig = plot_uniform_to_output_rev1(u, u, (1:99)', (1:99)');
+fig = plot_uniform_to_output_rev2(u, u, (1:99)', 2*(1:99)', Headline="h", XLabel="x", TracePct=25);
 tc.addTeardown(@() close(fig));
-tc.verifyEmpty(findobj(fig, "Type", "line", "Marker", "o"));
+labels = string(get(findobj(fig, "Type", "text"), "String"));
+tc.verifyTrue(any(contains(labels, "25%") & contains(labels, "50.0")));
+tc.verifyEmpty(findobj(fig, "Type", "line", "Marker", "o", "MarkerFaceColor", "w"));
+end
+
+function test_palette_values(tc)
+c = figure_palette_rev1();
+tc.verifyEqual(round(255*c.dark_blue), [22 51 83]);
+tc.verifyEqual(round(255*c.light_blue), [86 116 196]);
+tc.verifyEqual(round(255*c.purple), [110 79 146]);
+tc.verifyEqual(round(255*c.mid_gray), [138 141 145]);
+tc.verifyEqual(c.font, "Times New Roman");
+end
+
+function test_style_axes(tc)
+fig = figure;
+tc.addTeardown(@() close(fig));
+ax = axes(fig);
+plot(ax, 1:3);
+legend(ax, "x");
+style_axes_rev1(ax, FontSize=9, XGrid=true);
+c = figure_palette_rev1();
+tc.verifyEqual(string(ax.Box), "off");
+tc.verifyEqual(ax.FontSize, 9);
+tc.verifyEqual(string(ax.XGrid), "on");
+tc.verifyEqual(string(ax.YAxis.Color), "none");
+tc.verifyEqual(ax.XAxis.TickLabelColor, c.dark_blue);
+tc.verifyEqual(ax.XAxis.Color, c.mid_gray);
+tc.verifyEmpty(ax.Legend);
+end
+
+function test_add_figure_text_layout(tc)
+fig = figure(Units="inches", Position=[1 1 6.5 3]);
+tc.addTeardown(@() close(fig));
+t = tiledlayout(fig, 1, 1);
+nexttile(t);
+add_figure_text_rev1(fig, t, Headline="H");
+boxes = findall(fig, "Type", "textboxshape");
+tc.verifyNumElements(boxes, 2);               % headline and marking only
+tc.verifyLessThan(sum(t.OuterPosition([2 4])), 1);
+tc.verifyGreaterThan(t.OuterPosition(2), 0);
+end
+
+function test_format_thousands(tc)
+tc.verifyEqual(format_thousands_rev1(100000), "100,000");
+tc.verifyEqual(format_thousands_rev1(999), "999");
+tc.verifyEqual(format_thousands_rev1(1234567), "1,234,567");
+tc.verifyEqual(format_thousands_rev1(-2500), "-2,500");
+tc.verifyError(@() format_thousands_rev1(1.5), "MATLAB:validators:mustBeInteger");
+end
+
+% ---------------- fit_eirp_truncated_normal_rev1 ----------------
+
+function test_eirp_fit_values(tc)
+t = read_bs_eirp_distribution_rev1(fullfile(tc.TestData.repo_root, "data", "7Ghz 0azi 0ele EIRP.xlsx"));
+fit = fit_eirp_truncated_normal_rev1(t);
+tc.verifyEqual(fit.mu_db, 31.74, "AbsTol", 0.01);
+tc.verifyEqual(fit.sigma_db, 5.04, "AbsTol", 0.01);
+tc.verifyEqual(fit.median_db, 31.68, "AbsTol", 0.01);
+tc.verifyEqual(fit.std_db, 4.67, "AbsTol", 0.01);
+tc.verifyEqual([fit.lower_db fit.upper_db], [19.5 42.5]);
+tc.verifyLessThan(max(abs(fit.residuals.residual_db)), 0.7);
+tc.verifyEqual(fit.residuals.residual_db([1 end])', [0 0], "AbsTol", 1e-9);
+end
+
+function test_eirp_fit_recovers_known_normal(tc)
+% A table built from a known truncated normal is fitted back exactly.
+pd = truncate(makedist("Normal", "mu", 30, "sigma", 4), 18, 44);
+p = (0:10:100)';
+t = table(p, icdf(pd, p/100), VariableNames=["percentile", "eirp_db"]);
+fit = fit_eirp_truncated_normal_rev1(t);
+tc.verifyEqual([fit.mu_db fit.sigma_db], [30 4], "AbsTol", 1e-3);
+tc.verifyLessThan(fit.rms_db, 1e-3);
+end
+
+function test_eirp_fit_needs_full_range(tc)
+t = table([10; 50; 90], [1; 2; 3], VariableNames=["percentile", "eirp_db"]);
+tc.verifyError(@() fit_eirp_truncated_normal_rev1(t), "aggregate_explainer:EirpFit");
 end
 
 % ---------------- draw_uniform_columns_rev1 ----------------

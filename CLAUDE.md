@@ -81,8 +81,14 @@ Markdown.
   When several inputs vary at once, use `draw_uniform_columns_rev1`: one
   substream per input. Don't seed inputs with `seed`, `seed+1`, `seed+2`.
 - Each example function takes `save_out` and writes its figure with
-  `exportgraphics` at 200 dpi. Figures carry the `DRAFT//PRE-DECISIONAL`
-  marking.
+  `exportgraphics` at 300 dpi, 6.5 inches wide (one report column).
+- Figures follow the NTIA report style (slide-design skill): a takeaway
+  headline that states the number, a subhead with units and scope, a source
+  line, and `DRAFT//PRE-DECISIONAL` at the top right
+  (`add_figure_text_rev1`); dark blue text, mid gray for context, light blue
+  for the one highlight, purple only for an alert (`figure_palette_rev1`);
+  Times New Roman, no box, light horizontal grid, direct labels instead of
+  legends (`style_axes_rev1`). Keep headlines to one line.
 - After changing an example, rerun it, commit the regenerated PNG and CSV,
   and update the numbers in `docs/working_paper.md`.
 - Every function in `src/`, every example, and every root script has a test.
@@ -111,6 +117,10 @@ Markdown.
 - `p2108_terrestrial_clutter_loss_vector_rev2` fixes two issues in the rev1
   copy in `general_terrestrial_pathloss`: Equation (6) applied as a distance
   clamp, and the output shape for row or matrix distances. See its help text.
+- EIRP is drawn from a normal distribution in dBm fitted to the CTIA table
+  and truncated to its 0th and 100th percentiles
+  (`fit_eirp_truncated_normal_rev1`). The production simulation uses a
+  spline through the table instead; the paper reports the difference.
 - The EIRP workbook is in dBm. CTIA provided it, based on empirical field
   measurements. The production simulation uses only its shape relative to the
   median. [nicklasorte/imt-matlab](https://github.com/nicklasorte/imt-matlab)

@@ -71,31 +71,35 @@ end
 
 function test_example02(tc)
 out = struct();
-evalc("out = example_02_bs_eirp_distribution_rev1(n_draws=2000, save_out=false, out_root=tc.TestData.repo_root);");
-tc.verifyEqual(out.median_db, 31.75);
+evalc("out = example_02_bs_eirp_distribution_rev2(n_draws=5000, save_out=false, out_root=tc.TestData.repo_root);");
+tc.verifyEqual(out.median_db, 31.68, "AbsTol", 0.01);
+tc.verifyEqual(out.std_db, 4.67, "AbsTol", 0.01);
 tc.verifyEqual(height(out.table), 11);
-tc.verifyEqual(out.table.offset_from_median_db([1 end])', [-12.25 10.75]);
-tc.verifyEqual(out.offset_draws_db, out.draws_db - 31.75, "AbsTol", 1e-12);
-tc.verifyEqual(out.max_spline_pchip_db, 0.061, "AbsTol", 0.001);
-tc.verifyEqual(out.max_spline_linear_db, 0.474, "AbsTol", 0.001);
-tc.verifyGreaterThanOrEqual(min(out.draws_db), 19.5 - 1e-9);
-tc.verifyLessThanOrEqual(max(out.draws_db), 42.5 + 1e-9);
+tc.verifyEqual(out.table.offset_from_median_db(out.table.percentile == 50), 0, "AbsTol", 1e-12);
+tc.verifyEqual(out.offset_draws_db, out.draws_db - out.median_db, "AbsTol", 1e-12);
+tc.verifyGreaterThanOrEqual(min(out.draws_db), 19.5);
+tc.verifyLessThanOrEqual(max(out.draws_db), 42.5);
+% The fitted draws have one peak; the spline draws are the rev1 method.
+tc.verifySize(out.spline_draws_db, size(out.draws_db));
+tc.verifyEqual(median(out.draws_db), median(out.spline_draws_db), "AbsTol", 0.3);
+end
+
+function test_example02_density_is_unimodal(tc)
+out = struct();
+evalc("out = example_02_bs_eirp_distribution_rev2(n_draws=50000, save_out=false, out_root=tc.TestData.repo_root);");
+[f, x] = ksdensity(out.draws_db, linspace(21, 41, 200));
+tc.verifyEqual(nnz(islocalmax(f, MinProminence=0.002)), 1);
+[g, ~] = ksdensity(out.spline_draws_db, x);
+tc.verifyGreaterThan(nnz(islocalmax(g, MinProminence=0.002)), 1);   % rev1's two peaks
 end
 
 function test_example02_writes_files(tc)
 root = temp_repo_root(tc);
-evalc("example_02_bs_eirp_distribution_rev1(n_draws=500, out_root=root);");
+evalc("example_02_bs_eirp_distribution_rev2(n_draws=500, out_root=root);");
 t = readtable(fullfile(root, "docs", "results", "bs_eirp_distribution.csv"));
 tc.verifyEqual(string(t.Properties.VariableNames), ...
-    ["percentile", "table_dbm", "monte_carlo_dbm", "offset_from_median_db"]);
+    ["percentile", "table_dbm", "fitted_dbm", "residual_db", "monte_carlo_dbm", "offset_from_median_db"]);
 tc.verifyTrue(isfile(fullfile(root, "docs", "figures", "fig02_bs_eirp_distribution.png")));
-end
-
-function test_example02_method_option(tc)
-a = struct(); b = struct();
-evalc("a = example_02_bs_eirp_distribution_rev1(n_draws=200, save_out=false, method=""linear"", out_root=tc.TestData.repo_root);");
-evalc("b = example_02_bs_eirp_distribution_rev1(n_draws=200, save_out=false, method=""spline"", out_root=tc.TestData.repo_root);");
-tc.verifyNotEqual(a.draws_db, b.draws_db);
 end
 
 % ---------------- example 03 (needs matlab_itm) ----------------
@@ -131,29 +135,40 @@ tc.verifyError(@() example_03_itm_flat_100km_2700mhz_rev1(save_out=false), ...
     "aggregate_explainer:NoItm");
 end
 
-% ---------------- example 04 (needs matlab_itm) ----------------
+% ---------------- examples 04 and 05 (need matlab_itm) ----------------
+
+function test_single_bs_inputs(tc)
+tc.assumeTrue(tc.TestData.has_itm, "matlab_itm is not on the path");
+in = single_bs_inputs_rev1(repo_root=tc.TestData.repo_root);
+tc.verifyEqual(in.signs, [1 -1 -1]);
+tc.verifyEqual(in.eirp_q(50), 31.68, "AbsTol", 0.01);
+tc.verifyEqual(in.path_q(50), 197.13, "AbsTol", 0.01);
+tc.verifyEqual(in.clutter_q(50), 29.29, "AbsTol", 0.01);
+tc.verifySize(in.path_q([10 50; 90 99]), [2 2]);
+end
+
+function test_single_bs_inputs_without_itm(tc)
+tc.assumeFalse(tc.TestData.has_itm, "matlab_itm is on the path; error path not reachable");
+tc.verifyError(@() single_bs_inputs_rev1(repo_root=tc.TestData.repo_root), "aggregate_explainer:NoItm");
+end
 
 function test_example04(tc)
 tc.assumeTrue(tc.TestData.has_itm, "matlab_itm is not on the path");
 out = struct();
-evalc("out = example_04_single_bs_100km_rev1(n_draws=5000, save_out=false, out_root=tc.TestData.repo_root);");
-% Each draw is exactly EIRP - path loss - clutter loss.
+evalc("out = example_04_single_bs_100km_rev2(n_draws=5000, save_out=false, out_root=tc.TestData.repo_root);");
 tc.verifyEqual(out.prx_dbm, out.eirp_dbm - out.path_db - out.clutter_db, "AbsTol", 1e-12);
-% Sum of medians: 31.75 - 197.13 - 29.29 dBm (examples 01-03).
-tc.verifyEqual(out.median_of_terms_dbm, 31.75 - 197.128 - 29.293, "AbsTol", 0.01);
-% Monte Carlo percentiles agree with the exact convolution.
+tc.verifyEqual(out.median_of_terms_dbm, 31.681 - 197.128 - 29.293, "AbsTol", 0.01);
 mid = out.table.percentile >= 5 & out.table.percentile <= 95;
 tc.verifyLessThan(max(abs(out.table.difference_db(mid))), 0.6);
-% Clutter at 100 km equals the 2 km distribution (Equation 6).
-tc.verifyEqual(median(out.clutter_db), 29.29, "AbsTol", 0.3);
-tc.verifyEqual(sum(out.spread.share_of_variance_pct), 100, "AbsTol", 3);
+% Fitted EIRP and the production spline give nearly the same received power.
+tc.verifyLessThan(max(abs(out.table.spline_eirp_dbm - out.table.monte_carlo_dbm)), 1);
 tc.verifyEqual(height(out.table), 10);
 end
 
 function test_example04_inputs_independent(tc)
 tc.assumeTrue(tc.TestData.has_itm, "matlab_itm is not on the path");
 out = struct();
-evalc("out = example_04_single_bs_100km_rev1(n_draws=20000, save_out=false, out_root=tc.TestData.repo_root);");
+evalc("out = example_04_single_bs_100km_rev2(n_draws=20000, save_out=false, out_root=tc.TestData.repo_root);");
 r = corr(out.u);
 tc.verifyLessThan(max(abs(r(~eye(3)))), 0.03);
 end
@@ -161,15 +176,43 @@ end
 function test_example04_writes_files(tc)
 tc.assumeTrue(tc.TestData.has_itm, "matlab_itm is not on the path");
 root = temp_repo_root(tc);
-evalc("example_04_single_bs_100km_rev1(n_draws=500, out_root=root);");
+evalc("example_04_single_bs_100km_rev2(n_draws=500, out_root=root);");
 tc.verifyTrue(isfile(fullfile(root, "docs", "results", "single_bs_100km_2700mhz.csv")));
-tc.verifyTrue(isfile(fullfile(root, "docs", "results", "single_bs_100km_2700mhz_spread.csv")));
 tc.verifyTrue(isfile(fullfile(root, "docs", "figures", "fig04_single_bs_100km_2700mhz.png")));
+end
+
+function test_example05(tc)
+tc.assumeTrue(tc.TestData.has_itm, "matlab_itm is not on the path");
+out = struct();
+evalc("out = example_05_spread_rev1(n_draws=20000, save_out=false, out_root=tc.TestData.repo_root);");
+t = out.table;
+tc.verifyEqual(height(t), 4);
+% Holding any input fixed narrows the distribution; path loss narrows it most.
+tc.verifyTrue(all(t.std_db(2:4) < t.std_db(1)));
+[~, k] = min(t.std_db);
+tc.verifyEqual(t.scenario(k), "Path loss held at median");
+% Independent terms: the fixed-input variances match var(total) - var(input).
+v_all = t.std_db(1)^2;
+v_in = out.share.std_db.^2;
+tc.verifyEqual(t.std_db(2:4).^2, v_all - v_in, "RelTol", 0.03);
+tc.verifyEqual(sum(out.share.share_of_variance_pct), 100, "AbsTol", 3);
+tc.verifyEqual(out.share.input(out.share.share_of_variance_pct == max(out.share.share_of_variance_pct)), "Path loss");
+% The worst-case stack sits far above the 99th percentile of the sum.
+tc.verifyGreaterThan(out.worst_stack_dbm - out.p99_dbm, 10);
+end
+
+function test_example05_writes_files(tc)
+tc.assumeTrue(tc.TestData.has_itm, "matlab_itm is not on the path");
+root = temp_repo_root(tc);
+evalc("example_05_spread_rev1(n_draws=500, out_root=root);");
+tc.verifyTrue(isfile(fullfile(root, "docs", "results", "single_bs_100km_spread.csv")));
+tc.verifyTrue(isfile(fullfile(root, "docs", "results", "single_bs_100km_variance_share.csv")));
+tc.verifyTrue(isfile(fullfile(root, "docs", "figures", "fig05_single_bs_100km_spread.png")));
 end
 
 function test_example04_without_itm_errors(tc)
 tc.assumeFalse(tc.TestData.has_itm, "matlab_itm is on the path; error path not reachable");
-tc.verifyError(@() example_04_single_bs_100km_rev1(save_out=false), "aggregate_explainer:NoItm");
+tc.verifyError(@() example_04_single_bs_100km_rev2(save_out=false), "aggregate_explainer:NoItm");
 end
 
 % ---------------- setup and run-all ----------------
@@ -194,11 +237,11 @@ tc.assumeTrue(tc.TestData.has_itm, "matlab_itm is not on the path");
 root = temp_repo_root(tc);
 out = struct();
 evalc("out = run_all_examples_rev1(n_draws=300, out_root=root);");
-tc.verifyEqual(string(fieldnames(out))', ["p2108", "eirp", "itm", "single_bs"]);
+tc.verifyEqual(string(fieldnames(out))', ["p2108", "eirp", "itm", "single_bs", "spread"]);
 figs = dir(fullfile(root, "docs", "figures", "*.png"));
 csvs = dir(fullfile(root, "docs", "results", "*.csv"));
-tc.verifyNumElements(figs, 4);
-tc.verifyNumElements(csvs, 6);
+tc.verifyNumElements(figs, 5);
+tc.verifyNumElements(csvs, 7);
 end
 
 % ---------------- build plan ----------------

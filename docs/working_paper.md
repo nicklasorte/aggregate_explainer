@@ -43,8 +43,9 @@ $$
 
 Each term on the right except the antenna gains is a separate draw.
 
-Section 6 does this for one base station. Section 7 lists the planned sections
-on how per-station powers are added and how the turn-off list is built.
+Sections 6 and 7 do this for one base station. Section 8 lists the planned
+sections on how per-station powers are added and how the turn-off list is
+built.
 
 ## 2. Example 1: clutter loss (ITU-R P.2108-1), 2 km, 2.7 GHz
 
@@ -95,8 +96,8 @@ with a 29.3 dB median and a 4.0 dB standard deviation.
 ![P.2108 clutter loss at 2 km and 2.7 GHz](figures/fig01_p2108_2km_2700mhz.png)
 
 *Figure 1. Left: 100,000 uniform draws. Center: the P.2108 curve that maps a
-location percentage to a loss, with the table percentiles marked. Right: the
-clutter loss draws.*
+location percentage to a loss; the dotted line traces one draw, at 90%.
+Right: the clutter loss draws.*
 
 | *p* (%) | Model (dB) | 100,000 draws (dB) | Simulation grid (dB) |
 | --- | --- | --- | --- |
@@ -137,9 +138,9 @@ where the Recommendation gives no value.
 
 ## 3. Example 2: base station EIRP
 
-**Code:** `examples/example_02_bs_eirp_distribution_rev1.m`,
+**Code:** `examples/example_02_bs_eirp_distribution_rev2.m`,
 `src/read_bs_eirp_distribution_rev1.m`,
-`src/sample_from_percentile_table_rev1.m`
+`src/fit_eirp_truncated_normal_rev1.m`
 
 ### The input
 
@@ -203,28 +204,58 @@ assumes that the shape of the EIRP distribution, its spread around the median,
 carries over to base stations at 2.7 GHz. (TODO: confirm, or replace with
 2.7 GHz data.)
 
+### From 11 points to a smooth distribution
+
+The table gives only 11 points of the distribution. Drawing from it needs a
+rule for the values between the points. Two rules give different shapes:
+
+- **A spline through the points.** The production simulation does this. The
+  table is flattest between the 30th and 40th and between the 60th and 70th
+  percentiles, so the spline maps many percentages to nearly the same EIRP.
+  The draws then pile up in two peaks that come from the interpolation, not
+  from how base stations operate.
+- **A fitted normal distribution in dBm.** This paper uses this rule. It fits
+  a normal distribution to the table's percentiles and cuts it off at the
+  table's 0th and 100th percentiles (19.5 dBm and 42.5 dBm), so no draw falls
+  outside the measured range. A normal distribution in dB is a lognormal
+  distribution in watts, the usual model for power that varies by many
+  small effects multiplied together.
+
+The fit is least squares on the nine interior percentiles. It has a mean of
+31.74 dBm and a standard deviation of 5.04 dB before the cutoff. After the
+cutoff, the median is 31.68 dBm and the standard deviation is 4.67 dB.
+
+| Percentile (%) | Table (dBm) | Fitted (dBm) | Fitted − table (dB) |
+| --- | --- | --- | --- |
+| 10 | 25.25 | 25.42 | 0.17 |
+| 20 | 28.00 | 27.54 | −0.46 |
+| 30 | 29.25 | 29.10 | −0.15 |
+| 40 | 30.25 | 30.43 | 0.18 |
+| 50 | 31.75 | 31.68 | −0.07 |
+| 60 | 32.75 | 32.93 | 0.18 |
+| 70 | 33.75 | 34.25 | 0.50 |
+| 80 | 35.50 | 35.77 | 0.27 |
+| 90 | 38.50 | 37.81 | −0.69 |
+
+The fit is within 0.7 dB of every table point, with a root-mean-square error
+of 0.35 dB.
+
 ### Uniform in, EIRP out
 
-Here the inverse CDF is the table itself. The code interpolates between the 11
-points at 100 *u*.
+![Base station EIRP from the fitted normal distribution](figures/fig02_bs_eirp_distribution.png)
 
-![Base station EIRP distribution](figures/fig02_bs_eirp_distribution.png)
-
-*Figure 2. Left: 100,000 uniform draws. Center: the percentile table (points)
-and the spline through it. Right: the EIRP draws.*
+*Figure 2. Left: 100,000 uniform draws. Center: the fitted distribution's
+inverse CDF (line) and the CTIA table (circles). Right: the EIRP draws, a
+single bell-shaped peak.*
 
 Things to notice:
 
-- The distribution spans 23 dB, from 12.25 dB below the median to 10.75 dB
-  above it. It is wider and less symmetric than the clutter loss distribution.
-- The two peaks in the right panel are where the table is flattest (30th to
-  40th and 60th to 70th percentiles): many percentages map to nearly the same
-  EIRP. With only 11 points, the fine shape of the output depends on the
-  interpolation. Treat the peaks as a feature of the table, not as two
-  operating modes.
-- The simulation interpolates with a spline. On this table the spline never
-  decreases, and it differs from shape-preserving interpolation (`pchip`) by
-  at most 0.06 dB and from straight lines by at most 0.47 dB.
+- The draws have one peak, at the median, and fall off on both sides.
+- 98% of draws fall within 20.4 dB: from 21.1 dBm (1st percentile) to
+  41.5 dBm (99th percentile).
+- Choosing the fit over the spline changes the received power in Section 6 by
+  at most 0.4 dB at any listed percentile. The choice changes the picture, not
+  the result.
 
 ## 4. Example 3: path loss (ITM point-to-point), flat terrain, 100 km, 2.7 GHz
 
@@ -262,8 +293,9 @@ Free-space loss is 141.08 dB. ITM's reference attenuation adds 58.97 dB.
 
 ![ITM loss on a flat 100 km path at 2.7 GHz](figures/fig03_itm_flat_100km_2700mhz.png)
 
-*Figure 3. Left: 100,000 uniform draws. Center: ITM loss against reliability.
-Right: the path loss draws.*
+*Figure 3. Left: 100,000 uniform draws. Center: ITM loss against the time
+percentage; the dotted line traces one draw, at 90%. Right: the path loss
+draws.*
 
 | Reliability (%) | Model (dB) | 100,000 draws (dB) | Simulation grid (dB) |
 | --- | --- | --- | --- |
@@ -308,7 +340,7 @@ lowers the median loss by 7.1 dB.
 | Input | Model | What the percentage means | Median | 1 % to 99 % span |
 | --- | --- | --- | --- | --- |
 | Clutter loss, 2 km | ITU-R P.2108-1 | Locations | 29.29 dB | 18.7 dB |
-| EIRP offset | Percentile table | Operating states | 0 dB | 23 dB (0 % to 100 %) |
+| EIRP | Normal fit to the CTIA table | Operating states | 31.68 dBm | 20.4 dB |
 | Path loss, flat 100 km | ITM v1.4 | Time | 197.13 dB | 39.2 dB |
 
 All three use the same mechanism: one uniform draw, one curve. They differ in
@@ -316,8 +348,9 @@ what the percentage stands for and in how wide the curve is.
 
 ## 6. Example 4: one base station at 100 km
 
-**Code:** `examples/example_04_single_bs_100km_rev1.m`,
-`src/draw_uniform_columns_rev1.m`, `src/sum_of_independent_db_rev1.m`
+**Code:** `examples/example_04_single_bs_100km_rev2.m`,
+`src/single_bs_inputs_rev1.m`, `src/draw_uniform_columns_rev1.m`,
+`src/sum_of_independent_db_rev1.m`
 
 ### The calculation
 
@@ -328,12 +361,12 @@ $$
 P_\mathrm{rx} = \mathrm{EIRP} - L_\mathrm{path} - L_\mathrm{clutter}
 $$
 
-Each Monte Carlo draw does the following:
+Each Monte Carlo trial does the following:
 
 1. Draws three independent uniform numbers, one for each input.
-1. Reads the EIRP table at the first, the ITM curve (Example 3) at the second,
-   and the P.2108 curve at the third. At 100 km, Equation (6) holds the
-   clutter loss at its 2 km distribution, the one in Example 1.
+1. Reads the fitted EIRP distribution (Example 2) at the first, the ITM curve
+   (Example 3) at the second, and the P.2108 curve at the third. At 100 km,
+   Equation (6) holds the clutter loss at its 2 km distribution (Example 1).
 1. Adds the three values in dB.
 
 The receive antenna gain is 0 dBi. The radar antenna comes in a later section.
@@ -342,50 +375,79 @@ The receive antenna gain is 0 dBi. The radar antenna comes in a later section.
 
 ![Received power from one base station at 100 km](figures/fig04_single_bs_100km_2700mhz.png)
 
-*Figure 4. Top: the three input distributions from 100,000 draws. Bottom left:
-the received power. Bottom right: its CDF from the Monte Carlo draws and from
-an exact calculation.*
+*Figure 4. Top: the three input distributions from 100,000 trials. Bottom
+left: the received power, with its median, 95th, and 99th percentiles. Bottom
+right: its CDF from the trials and from an exact calculation.*
 
-| Percentile | Monte Carlo (dBm) | Exact convolution (dBm) |
-| --- | --- | --- |
-| 1 | −216.80 | −216.83 |
-| 5 | −210.35 | −210.37 |
-| 10 | −206.92 | −206.90 |
-| 50 | −194.36 | −194.33 |
-| 80 | −185.50 | −185.46 |
-| 90 | −180.53 | −180.55 |
-| 95 | −176.43 | −176.34 |
-| 99 | −168.15 | −168.08 |
+| Percentile | Monte Carlo (dBm) | Exact convolution (dBm) | With the production spline for EIRP (dBm) |
+| --- | --- | --- | --- |
+| 1 | −216.47 | −216.54 | −216.80 |
+| 5 | −210.21 | −210.20 | −210.35 |
+| 10 | −206.81 | −206.78 | −206.92 |
+| 50 | −194.32 | −194.32 | −194.36 |
+| 80 | −185.57 | −185.53 | −185.50 |
+| 90 | −180.66 | −180.68 | −180.53 |
+| 95 | −176.59 | −176.51 | −176.43 |
+| 99 | −168.27 | −168.31 | −168.15 |
 
-The second column is a check that uses no random numbers. Because the three
-inputs are independent, the distribution of their sum is the convolution of
-their distributions. The two methods agree to within 0.1 dB.
+Two checks back up the Monte Carlo column:
 
-| Input | Standard deviation (dB) | Share of the output variance |
-| --- | --- | --- |
-| Path loss (ITM) | 8.20 | 63% |
-| EIRP | 4.87 | 22% |
-| Clutter loss (P.2108) | 4.02 | 15% |
+- **Exact convolution.** Because the three inputs are independent, the
+  distribution of their sum is the convolution of their distributions. That
+  calculation uses no random numbers. It agrees with the trials to within
+  0.1 dB.
+- **EIRP rule.** Running the same trials with the production simulation's
+  spline for EIRP moves no listed percentile by more than 0.4 dB.
 
-The example shows three things:
+The median of the sum, −194.32 dBm, is close to the sum of the three medians,
+−194.74 dBm. The tails are a different story, as the next section shows.
 
-- **Spreads add as variances, not as decibels.** The output standard deviation
-  is 10.3 dB, the root sum of squares of 8.20, 4.87, and 4.02. Path loss
-  supplies nearly two-thirds of the variance.
-- **You can't add percentiles.** Stacking the worst 1% of each input (99th
-  percentile EIRP, 1st percentile path loss, 1st percentile clutter loss)
-  gives −152.3 dBm. The 99th percentile of the actual sum is −168.1 dBm,
-  16 dB lower. All three inputs are almost never at their extremes in the
-  same draw, and the Monte Carlo simulation accounts for that.
-- **The median nearly survives; the tails don't.** Adding the three medians
-  gives −194.67 dBm, and the median of the sum is −194.36 dBm. But the
-  high-power tail is longer than the low-power tail: the 99th percentile is
-  26.2 dB above the median, and the 1st percentile is 22.4 dB below it.
+## 7. Where the spread comes from
 
-This is one base station. The aggregate from many stations is the subject of
-the planned sections.
+**Code:** `examples/example_05_spread_rev1.m`
 
-## 7. Planned sections
+The received power in Section 6 spans 48 dB from the 1st to the 99th
+percentile. This section asks which input causes that spread. It reruns the
+same 100,000 trials three more times, each time holding one input at its
+median while the other two still vary.
+
+![Where the spread of received power comes from](figures/fig05_single_bs_100km_spread.png)
+
+*Figure 5. Left: the range of received power with all three inputs varying
+(top) and with each input held at its median. Thick bars cover 5% to 95% of
+trials, thin lines 1% to 99%, circles mark the median. The diamond marks the
+worst-case stack. Right: each input's share of the variance of the received
+power.*
+
+| Scenario | 5% to 95% range (dB) | 1% to 99% range (dB) | Standard deviation (dB) |
+| --- | --- | --- | --- |
+| All three vary | 33.6 | 48.2 | 10.24 |
+| EIRP held at median | 30.0 | 43.2 | 9.14 |
+| Path loss held at median | 20.3 | 27.9 | 6.14 |
+| Clutter loss held at median | 31.0 | 44.4 | 9.42 |
+
+The figure and table support four findings:
+
+- **Path loss sets most of the spread.** It supplies 64% of the variance of
+  the received power; EIRP supplies 21% and clutter loss 15%. Holding path
+  loss at its median narrows the middle 90% of trials from 33.6 dB to
+  20.3 dB. Holding EIRP or clutter loss fixed narrows it by only 3 dB or
+  less.
+- **Spreads add as variances, not as decibels.** The standard deviations of
+  the inputs are 8.20 dB, 4.66 dB, and 4.02 dB. They add to 16.9 dB, but the
+  output standard deviation is 10.24 dB, close to the square root of the sum of
+  their squares (10.26 dB). Independent inputs partly cancel each other's extremes.
+- **Worst cases don't stack.** Taking the worst 1% of each input together
+  (99th percentile EIRP, 1st percentile path loss, 1st percentile clutter
+  loss) gives −152.8 dBm. The 99th percentile of the actual sum is
+  −168.3 dBm, 15.4 dB lower. All three inputs are almost never at their
+  extremes in the same trial. A worst-case stack overstates the interference
+  that one base station causes 1% of the time by about 15 dB.
+- **Effort on the inputs should follow the variance.** A better path loss
+  model, with real terrain and a confidence level chosen with care, changes
+  the answer far more than refining the EIRP table or the clutter model.
+
+## 8. Planned sections
 
 - **From single links to an aggregate, and the turn-off list.** How the median
   (50 %) values set the order of the turn-off list, how each Monte Carlo
