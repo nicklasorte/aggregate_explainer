@@ -31,15 +31,30 @@ the percentage into a value (clutter loss, EIRP, path loss).
 | `data/` | Input tables, with provenance in `data/SOURCES.md`. |
 | `docs/working_paper.md` | The working paper (source). |
 | `docs/working_paper.docx` | Word version, built from the Markdown by `docs/build/build_working_paper_docx.py`. Don't edit it by hand. |
+| `docs/build/` | `build_working_paper_docx.py` and its `requirements.txt`. |
+| `docs/PLAN_*.md` | Plans for sections not yet written. |
+| `buildfile.m` | `buildtool` tasks: `check`, `test`, `examples`. |
+| `.github/` | CI workflow and pull request template. |
+| `CHANGELOG.md` | Notable changes, newest first. |
+| `CITATION.cff` | How to cite the paper and code. |
 | `ext/` | Cloned dependencies (git-ignored). |
 
 ## Run
 
 ```matlab
 setup_aggregate_explainer_rev1
-results = runtests("tests/test_aggregate_explainer_rev1.m");
-run_all_examples_rev1
+buildtool                 % Code Analyzer (no warnings allowed) and unit tests
+buildtool examples        % rebuild docs/figures and docs/results
 ```
+
+```bash
+pip install -r docs/build/requirements.txt    # once; also needs pandoc 3.x
+python3 docs/build/build_working_paper_docx.py
+```
+
+CI (`.github/workflows/ci.yml`) runs `buildtool check test` on every push and
+pull request, and fails if `docs/working_paper.docx` is out of date with the
+Markdown.
 
 ## Dependencies
 
@@ -68,6 +83,8 @@ run_all_examples_rev1
   marking.
 - After changing an example, rerun it, commit the regenerated PNG and CSV,
   and update the numbers in `docs/working_paper.md`.
+- Add a line to `CHANGELOG.md` for every change a reader of the paper would
+  notice.
 - After changing `docs/working_paper.md` or a figure, rebuild the Word file
   with `python3 docs/build/build_working_paper_docx.py` (needs pandoc 3.x and
   python-docx) and commit it with the change.

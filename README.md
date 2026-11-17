@@ -10,9 +10,9 @@ receiver as the case.
 ## Quick start
 
 ```matlab
-setup_aggregate_explainer_rev1                       % adds paths, fetches matlab_itm
-runtests("tests/test_aggregate_explainer_rev1.m")
-run_all_examples_rev1                                % rebuilds docs/figures and docs/results
+setup_aggregate_explainer_rev1     % adds paths, fetches matlab_itm
+buildtool                          % Code Analyzer and unit tests
+buildtool examples                 % rebuilds docs/figures and docs/results
 ```
 
 ## Examples

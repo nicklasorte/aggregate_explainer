@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you cite this working paper or reuse its code, cite it as below."
+title: "How an aggregate interference Monte Carlo simulation works"
+type: software
+authors:
+  - given-names: Nick
+    family-names: LaSorte
+repository-code: "https://github.com/nicklasorte/aggregate_explainer"
+date-released: 2026-11-17
+version: "0.1.0-draft"
+keywords:
+  - Monte Carlo
+  - aggregate interference
+  - ITU-R P.2108
+  - Irregular Terrain Model
+  - spectrum sharing

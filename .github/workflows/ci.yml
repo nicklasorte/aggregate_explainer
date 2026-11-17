@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  matlab:
+    name: MATLAB check and tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: matlab-actions/setup-matlab@v2
+        with:
+          release: R2025b
+          products: Statistics_and_Machine_Learning_Toolbox
+
+      - name: Code Analyzer and unit tests
+        uses: matlab-actions/run-build@v2
+        with:
+          tasks: check test
+
+  word-paper:
+    name: Word paper is up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pandoc
+        run: |
+          wget -q https://github.com/jgm/pandoc/releases/download/3.1.3/pandoc-3.1.3-1-amd64.deb
+          sudo dpkg -i pandoc-3.1.3-1-amd64.deb
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python requirements
+        run: pip install -r docs/build/requirements.txt
+
+      - name: Build the Word paper
+        run: python3 docs/build/build_working_paper_docx.py
+
+      - name: Check that the committed text matches the Markdown
+        # A .docx differs byte for byte on every build (zip timestamps), so
+        # compare the text pandoc reads back from each file instead.
+        run: |
+          pandoc --quiet docs/working_paper.docx -t plain -o built.txt
+          git show HEAD:docs/working_paper.docx > committed.docx
+          pandoc --quiet committed.docx -t plain -o committed.txt
+          if ! diff -q committed.txt built.txt; then
+            echo "::error file=docs/working_paper.docx::Rebuild it: python3 docs/build/build_working_paper_docx.py"
+            diff committed.txt built.txt | head -40
+            exit 1
+          fi

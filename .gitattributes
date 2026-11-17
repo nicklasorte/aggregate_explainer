@@ -1,0 +1,17 @@
+# Text files: normalize line endings in the repository.
+* text=auto
+
+*.m      text diff=matlab
+*.md     text
+*.csv    text
+*.py     text
+*.yml    text
+*.cff    text
+
+# Binary files: never merge or convert line endings.
+*.png    binary
+*.jpg    binary
+*.docx   binary
+*.xlsx   binary
+*.mat    binary
+*.pdf    binary
