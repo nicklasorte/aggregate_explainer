@@ -14,6 +14,10 @@ function eirp_table = read_bs_eirp_distribution_rev1(xlsx_file)
 %   per percentile, sorted by percentile. The azimuth and elevation of the
 %   cut are stored in eirp_table.Properties.UserData.
 %
+%   Source: CTIA, based on empirical measurements of base stations in the
+%   field. nicklasorte/imt-matlab (export_eirp_percentile_table) produces
+%   modeled tables in the same per-direction percentile layout.
+%
 %   Units: EIRP in dBm. FSS_Neighborhood normalizes the table to its 50th
 %   percentile and adds the result to a fixed median EIRP, so only the
 %   shape (dB relative to the median) is used there.

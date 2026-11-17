@@ -6,6 +6,11 @@ Notable changes to the working paper and code. Newest first.
 
 ### Added
 
+- EIRP provenance in the paper (Section 3): the table is CTIA field
+  measurement data. New subsection on how such a table can be modeled
+  (imt-matlab, ITU-R M.2101-0 AAS), and a flagged assumption that the 7 GHz
+  distribution shape applies at 2.7 GHz.
+
 - Working paper `docs/working_paper.md`, with a Word version
   `docs/working_paper.docx` built by `docs/build/build_working_paper_docx.py`.
 - Example 01: ITU-R P.2108-1 clutter loss distribution at 2 km, 2.7 GHz.

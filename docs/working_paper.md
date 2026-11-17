@@ -148,6 +148,10 @@ steering. The simulation describes it with a table of percentiles for the
 0° azimuth, 0° elevation direction (`data/7Ghz 0azi 0ele EIRP.xlsx`, from
 FSS_Neighborhood). Values are in dBm.
 
+**Where the table comes from.** CTIA provided the table, based on empirical
+measurements of base stations in the field. It is measured data, not the
+output of an antenna model.
+
 | Percentile (%) | EIRP (dBm) | Offset from median (dB) |
 | --- | --- | --- |
 | 0 | 19.5 | −12.25 |
@@ -165,6 +169,39 @@ FSS_Neighborhood). Values are in dBm.
 The simulation uses the last column. It sets a fixed median EIRP for each base
 station and adds the offset drawn from this table. Only the shape of the
 distribution matters, not its absolute level.
+
+### How a table like this can be modeled
+
+An active antenna system (AAS) base station steers beams toward the users it
+serves, so its EIRP in any one direction changes from moment to moment. The
+companion repository [imt-matlab](https://github.com/nicklasorte/imt-matlab)
+shows how a per-direction EIRP table can be built from a model instead of
+from measurements:
+
+1. Model the antenna with the AAS pattern in Recommendation ITU-R M.2101-0
+   (element pattern, array factor, sub-arrays, and mechanical downtilt).
+1. In each Monte Carlo draw, place users at random in the sector and point
+   one beam at each. The user placement itself starts from uniform draws: the
+   radius is $r = \sqrt{r_\mathrm{min}^2 + u\,(r_\mathrm{max}^2 - r_\mathrm{min}^2)}$
+   with $u$ uniform on (0, 1), the same inverse-transform idea as Section 1.
+1. Add the simultaneous beams in linear power to get the sector EIRP in every
+   azimuth and elevation direction.
+1. After many draws, record the 0th to 100th percentiles of EIRP for each
+   direction (`export_eirp_percentile_table` writes columns `p000` to
+   `p100`).
+
+The result has the same layout as the CTIA table: one row per direction, one
+column per percentile. The production simulation can take either one.
+
+The two differ in what a percentile means. In the modeled table a percentile
+is over random beam pointings; it includes no traffic load or TDD activity
+unless those are added. A table from field measurements reflects how the
+measured base stations actually operated.
+
+**Assumption to confirm.** The table comes from the 7 GHz work. Using it here
+assumes that the shape of the EIRP distribution, its spread around the median,
+carries over to base stations at 2.7 GHz. (TODO: confirm, or replace with
+2.7 GHz data.)
 
 ### Uniform in, EIRP out
 
